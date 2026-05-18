@@ -237,9 +237,11 @@ export function useGameEngine() {
       }
 
       if (enemyDied) {
-        const drops: GearItemInstance[] = currentEncounter.isBoss
+        const rawDrops: GearItemInstance[] = currentEncounter.isBoss
           ? rollBossDrops()
           : rollMobDrops();
+        const existingIds = new Set(s.inventory.map((i) => i.def.id));
+        const drops = rawDrops.filter((d) => !existingIds.has(d.def.id));
 
         const isLastInZone = s.encounterIndex >= ZONES[s.zoneIndex].length - 1;
         const isLastZone = s.zoneIndex >= ZONES.length - 1;
