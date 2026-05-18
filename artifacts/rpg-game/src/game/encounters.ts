@@ -264,7 +264,7 @@ const MOB_ENCOUNTERS: Encounter[] = [
 const BOSS_1: Encounter = {
   id: "boss-bradley",
   enemyName: '"Senior" Bradley',
-  enemyMaxHp: 100,
+  enemyMaxHp: 150,
   enemyEmoji: "👨‍🎓",
   isBoss: true,
   victoryText:
@@ -398,7 +398,7 @@ const BOSS_1: Encounter = {
 const BOSS_2: Encounter = {
   id: "boss-westen",
   enemyName: '"Super Senior" Westen',
-  enemyMaxHp: 120,
+  enemyMaxHp: 250,
   enemyEmoji: "🧔",
   isBoss: true,
   victoryText:
@@ -532,7 +532,7 @@ const BOSS_2: Encounter = {
 const BOSS_FINAL: Encounter = {
   id: "boss-barrett",
   enemyName: "Barrett Luke Hutchins",
-  enemyMaxHp: 150,
+  enemyMaxHp: 500,
   enemyEmoji: "👑",
   isBoss: true,
   victoryText:
@@ -663,10 +663,20 @@ const BOSS_FINAL: Encounter = {
   ],
 };
 
+const ZONE_2_HP = [45, 55, 65, 75, 90];
+const ZONE_3_HP = [60, 75, 90, 110, 125];
+
+function scaleMobs(hpValues: number[]): Encounter[] {
+  return MOB_ENCOUNTERS.map((enc, i) => ({
+    ...enc,
+    enemyMaxHp: hpValues[i] ?? enc.enemyMaxHp,
+  }));
+}
+
 export const ZONES: Encounter[][] = [
   [...MOB_ENCOUNTERS, BOSS_1],
-  [...MOB_ENCOUNTERS, BOSS_2],
-  [...MOB_ENCOUNTERS, BOSS_FINAL],
+  [...scaleMobs(ZONE_2_HP), BOSS_2],
+  [...scaleMobs(ZONE_3_HP), BOSS_FINAL],
 ];
 
 export const ZONE_NAMES = [
