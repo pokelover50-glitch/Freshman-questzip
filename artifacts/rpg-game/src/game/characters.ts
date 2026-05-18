@@ -2,48 +2,53 @@ import type { CharacterClassDef } from "./types";
 
 export const CHARACTER_CLASSES: CharacterClassDef[] = [
   {
-    id: "bookworm",
-    name: "The Bookworm",
+    id: "freshie",
+    name: "Freshie",
     description:
-      "Armed with knowledge and a fully-loaded backpack, you answer every question with academic precision.",
-    maxHp: 110,
-    bonus: "+15 enemy damage on trivia/academic answers",
-    emoji: "📚",
-  },
-  {
-    id: "jock",
-    name: "The Jock",
-    description:
-      "Built different. You show up to every encounter with pure confidence and a varsity letter.",
+      "Wide-eyed and eager, you entered high school with a smile. Every experience, good or bad, makes you stronger.",
     maxHp: 150,
-    bonus: "Starts with the most HP of any class",
-    emoji: "🏈",
+    bonus: "Heals +5 HP on every answer choice made",
+    emoji: "🌟",
+    ability: "heal-per-choice",
   },
   {
-    id: "artist",
-    name: "The Artist",
+    id: "bulking-freshman",
+    name: "Bulking Freshman",
     description:
-      "Unpredictable and expressive — your weird energy confuses enemies and opens unique escape routes.",
-    maxHp: 95,
-    bonus: "Unique 'creative' answer options that sometimes dodge damage entirely",
-    emoji: "🎨",
+      "You started your gains program in 8th grade. You show up to every encounter jacked, caffeinated, and dangerous.",
+    maxHp: 250,
+    bonus: "Deals x2 damage on every answer choice",
+    emoji: "💪",
+    ability: "double-damage",
   },
   {
-    id: "tech-nerd",
-    name: "The Tech Nerd",
+    id: "girl-freshman",
+    name: "Girl Freshman",
     description:
-      "Logic is your weapon. You analyze every situation before choosing your move.",
-    maxHp: 105,
-    bonus: "Can see enemy's current HP during encounters",
-    emoji: "💻",
-  },
-  {
-    id: "social-butterfly",
-    name: "The Social Butterfly",
-    description:
-      "You know everyone and everyone knows you. Charm, gossip, and social leverage are your specialties.",
+      "Underestimated. Unbothered. You have an uncanny ability to simply not get hurt when everyone expects you to.",
     maxHp: 100,
-    bonus: "+10 enemy damage on social/charm answers",
-    emoji: "🦋",
+    bonus: "25% chance to negate ALL damage taken from any choice",
+    emoji: "💅",
+    ability: "negate-damage-chance",
+  },
+  {
+    id: "barretts-type",
+    name: "Barrett's Type",
+    description:
+      "Something about you catches Barrett Luke Hutchins completely off guard. He simply cannot win against you.",
+    maxHp: 300,
+    bonus: "100% guaranteed to defeat Barrett Luke Hutchins on any choice selected against him",
+    emoji: "👑",
+    ability: "insta-kill-barrett",
+  },
+  {
+    id: "sixty-seven-freshman",
+    name: "67 Freshman",
+    description:
+      "You operate on a completely different plane of existence. 67% of the time, you simply end things immediately.",
+    maxHp: 67,
+    bonus: "67% chance to instantly defeat any enemy on any choice selected",
+    emoji: "🎲",
+    ability: "random-insta-kill",
   },
 ];
