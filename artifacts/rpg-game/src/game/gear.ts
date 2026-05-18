@@ -83,22 +83,25 @@ function makeInstance(def: GearItemDef): GearItemInstance {
   };
 }
 
-export function rollMobDrops(): GearItemInstance[] {
-  const drops: GearItemInstance[] = [];
-  for (const item of MOB_ITEMS) {
-    if (Math.random() < item.dropChance) {
-      drops.push(makeInstance(item));
-    }
+function weightedPick(items: GearItemDef[]): GearItemDef | null {
+  const totalWeight = items.reduce((sum, i) => sum + i.dropChance * 100, 0);
+  let roll = Math.random() * totalWeight;
+  for (const item of items) {
+    roll -= item.dropChance * 100;
+    if (roll <= 0) return item;
   }
-  return drops;
+  return null;
+}
+
+export function rollMobDrops(): GearItemInstance[] {
+  const roll = Math.random() * 100;
+  if (roll < 33) return [makeInstance(MOB_ITEMS[0])];
+  if (roll < 66) return [makeInstance(MOB_ITEMS[1])];
+  if (roll < 99) return [makeInstance(MOB_ITEMS[2])];
+  return [];
 }
 
 export function rollBossDrops(): GearItemInstance[] {
-  const drops: GearItemInstance[] = [];
-  for (const item of BOSS_ITEMS) {
-    if (Math.random() < item.dropChance) {
-      drops.push(makeInstance(item));
-    }
-  }
-  return drops;
+  const picked = weightedPick(BOSS_ITEMS);
+  return picked ? [makeInstance(picked)] : [];
 }
