@@ -44,7 +44,6 @@ export const FOOD_ITEMS: GearItemDef[] = [
     target: "any",
     isFromBoss: false,
     dropChance: 0.70,
-    stackable: true,
   },
   {
     id: "cherry",
@@ -56,7 +55,6 @@ export const FOOD_ITEMS: GearItemDef[] = [
     target: "any",
     isFromBoss: false,
     dropChance: 0.15,
-    stackable: true,
   },
   {
     id: "apple",
@@ -68,7 +66,6 @@ export const FOOD_ITEMS: GearItemDef[] = [
     target: "any",
     isFromBoss: false,
     dropChance: 0.10,
-    stackable: true,
   },
   {
     id: "sandwich",
@@ -80,7 +77,6 @@ export const FOOD_ITEMS: GearItemDef[] = [
     target: "any",
     isFromBoss: false,
     dropChance: 0.05,
-    stackable: true,
   },
 ];
 
