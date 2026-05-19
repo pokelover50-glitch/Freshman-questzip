@@ -3,14 +3,16 @@ export type CharacterClass =
   | "bulking-freshman"
   | "girl-freshman"
   | "barretts-type"
-  | "sixty-seven-freshman";
+  | "sixty-seven-freshman"
+  | "hidden";
 
 export type CharacterAbility =
   | "heal-per-choice"
   | "double-damage"
   | "negate-damage-chance"
-  | "insta-kill-barrett"
-  | "random-insta-kill";
+  | "barrett-damage-multiplier"
+  | "random-insta-kill"
+  | "hidden-ability";
 
 export interface CharacterClassDef {
   id: CharacterClass;
@@ -38,9 +40,11 @@ export interface GearItemDef {
   emoji: string;
   description: string;
   damage: number;
+  healAmount?: number;
   target: ItemTarget;
   isFromBoss: boolean;
   dropChance: number;
+  stackable?: boolean;
 }
 
 export interface GearItemInstance {

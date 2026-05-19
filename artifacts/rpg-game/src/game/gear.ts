@@ -33,6 +33,57 @@ export const MOB_ITEMS: GearItemDef[] = [
   },
 ];
 
+export const FOOD_ITEMS: GearItemDef[] = [
+  {
+    id: "grapes",
+    name: "Grapes",
+    emoji: "🍇",
+    description: "Restores 5 HP.",
+    damage: 0,
+    healAmount: 5,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0.70,
+    stackable: true,
+  },
+  {
+    id: "cherry",
+    name: "Cherry",
+    emoji: "🍒",
+    description: "Restores 7 HP.",
+    damage: 0,
+    healAmount: 7,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0.15,
+    stackable: true,
+  },
+  {
+    id: "apple",
+    name: "Apple",
+    emoji: "🍎",
+    description: "Restores 9 HP.",
+    damage: 0,
+    healAmount: 9,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0.10,
+    stackable: true,
+  },
+  {
+    id: "sandwich",
+    name: "Sandwich",
+    emoji: "🥪",
+    description: "Restores 15 HP.",
+    damage: 0,
+    healAmount: 15,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0.05,
+    stackable: true,
+  },
+];
+
 export const BOSS_ITEMS: GearItemDef[] = [
   {
     id: "mega-knight",
@@ -76,6 +127,14 @@ export const BOSS_ITEMS: GearItemDef[] = [
   },
 ];
 
+const FOOD_DROP_MOB_IDS = new Set([
+  "seventh-grader",
+  "eighth-grader",
+  "fellow-freshman",
+  "sophomore",
+  "junior",
+]);
+
 function makeInstance(def: GearItemDef): GearItemInstance {
   return {
     instanceId: `${def.id}-${Math.random().toString(36).slice(2, 9)}`,
@@ -93,12 +152,20 @@ function weightedPick(items: GearItemDef[]): GearItemDef | null {
   return null;
 }
 
-export function rollMobDrops(): GearItemInstance[] {
+export function rollMobDrops(encounterId?: string): GearItemInstance[] {
+  const drops: GearItemInstance[] = [];
+
   const roll = Math.random() * 100;
-  if (roll < 33) return [makeInstance(MOB_ITEMS[0])];
-  if (roll < 66) return [makeInstance(MOB_ITEMS[1])];
-  if (roll < 99) return [makeInstance(MOB_ITEMS[2])];
-  return [];
+  if (roll < 33) drops.push(makeInstance(MOB_ITEMS[0]));
+  else if (roll < 66) drops.push(makeInstance(MOB_ITEMS[1]));
+  else if (roll < 99) drops.push(makeInstance(MOB_ITEMS[2]));
+
+  if (encounterId && FOOD_DROP_MOB_IDS.has(encounterId)) {
+    const food = weightedPick(FOOD_ITEMS);
+    if (food) drops.push(makeInstance(food));
+  }
+
+  return drops;
 }
 
 export function rollBossDrops(): GearItemInstance[] {

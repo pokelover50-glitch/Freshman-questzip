@@ -49,10 +49,15 @@ function applyClassAbility(
       abilityMessage = "Freshie resilience: +5 HP restored!";
       break;
 
-    case "double-damage":
-      enemyDamage = baseEnemyDamage * 2;
-      if (baseEnemyDamage > 0) abilityMessage = `Bulking power: damage doubled to ${enemyDamage}!`;
+    case "double-damage": {
+      enemyDamage = Math.round(baseEnemyDamage * 1.5);
+      if (baseEnemyDamage > 0) abilityMessage = `Bulking power: damage x1.5 (${enemyDamage})!`;
+      if (basePlayerDamage > 0 && Math.random() < 0.10) {
+        playerDamage = basePlayerDamage * 2;
+        abilityMessage = (abilityMessage ? abilityMessage + " " : "") + "Rookie mistake: you took double damage!";
+      }
       break;
+    }
 
     case "negate-damage-chance":
       if (basePlayerDamage > 0 && Math.random() < 0.25) {
@@ -61,18 +66,21 @@ function applyClassAbility(
       }
       break;
 
-    case "insta-kill-barrett":
-      if (encounterId === "boss-barrett") {
-        enemyDamage = enemyMaxHp + 9999;
-        abilityMessage = "You are Barrett's type — he simply cannot beat you. Instant defeat!";
+    case "barrett-damage-multiplier":
+      if (encounterId === "boss-barrett" && baseEnemyDamage > 0) {
+        enemyDamage = Math.round(baseEnemyDamage * 1.75);
+        abilityMessage = `Barrett's weakness: damage multiplied x1.75 (${enemyDamage})!`;
       }
       break;
 
     case "random-insta-kill":
-      if (Math.random() < 0.67) {
+      if (Math.random() < 0.067) {
         enemyDamage = enemyMaxHp + 9999;
         abilityMessage = "67 Freshman energy activated — instant annihilation!";
       }
+      break;
+
+    case "hidden-ability":
       break;
   }
 
@@ -151,7 +159,8 @@ export function useGameEngine() {
           currentEncounter.id,
         );
 
-      const newPlayerHp = Math.max(0, s.playerHp - playerDamage + healAmount);
+      const newPlayerHpRaw = Math.max(0, s.playerHp - playerDamage + healAmount);
+      const newPlayerHp = Math.min(newPlayerHpRaw, s.playerMaxHp);
       const newEnemyHp = Math.max(0, s.enemyHp - enemyDamage);
 
       const modifiedOutcome: ChoiceOutcome = {
@@ -210,10 +219,32 @@ export function useGameEngine() {
         return { ...s, itemActionMessage: reason };
       }
 
-      const damageDealt = Math.min(def.damage, s.enemyHp);
-      const newEnemyHp = Math.max(0, s.enemyHp - def.damage);
       const newInventory = [...s.inventory];
       newInventory.splice(itemIdx, 1);
+
+      if (def.healAmount && def.healAmount > 0) {
+        const healGiven = Math.min(def.healAmount, s.playerMaxHp - s.playerHp);
+        const newPlayerHp = Math.min(s.playerHp + def.healAmount, s.playerMaxHp);
+        const fakeOutcome: ChoiceOutcome = {
+          text: `Used ${def.name}`,
+          playerDamage: 0,
+          enemyDamage: 0,
+          healAmount: healGiven,
+          narrative: `You ate the ${def.name} and restored ${healGiven} HP!`,
+        };
+        return {
+          ...s,
+          playerHp: newPlayerHp,
+          inventory: newInventory,
+          lastOutcome: fakeOutcome,
+          showOutcome: true,
+          abilityMessage: null,
+          itemActionMessage: null,
+        };
+      }
+
+      const damageDealt = Math.min(def.damage, s.enemyHp);
+      const newEnemyHp = Math.max(0, s.enemyHp - def.damage);
 
       const fakeOutcome: ChoiceOutcome = {
         text: `Used ${def.name}`,
@@ -249,9 +280,13 @@ export function useGameEngine() {
       if (enemyDied) {
         const rawDrops: GearItemInstance[] = currentEncounter.isBoss
           ? rollBossDrops()
-          : rollMobDrops();
-        const existingIds = new Set(s.inventory.map((i) => i.def.id));
-        const drops = rawDrops.filter((d) => !existingIds.has(d.def.id));
+          : rollMobDrops(currentEncounter.id);
+        const existingNonStackableIds = new Set(
+          s.inventory.filter((i) => !i.def.stackable).map((i) => i.def.id)
+        );
+        const drops = rawDrops.filter(
+          (d) => d.def.stackable || !existingNonStackableIds.has(d.def.id)
+        );
 
         const isLastInZone = s.encounterIndex >= ZONES[s.zoneIndex].length - 1;
         const isLastZone = s.zoneIndex >= ZONES.length - 1;
