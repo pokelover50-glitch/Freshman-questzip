@@ -67,6 +67,8 @@ export interface EncounterRound {
 
 export type GamePhase =
   | "title"
+  | "main-menu"
+  | "raid-select"
   | "character-select"
   | "intro"
   | "encounter"
@@ -89,4 +91,6 @@ export interface GameState {
   pendingDrops: GearItemInstance[];
   abilityMessage: string | null;
   itemActionMessage: string | null;
+  barrettDefeated: boolean;
+  completedRaids: string[];
 }

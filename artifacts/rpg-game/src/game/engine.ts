@@ -3,7 +3,7 @@ import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemInstance } fr
 import { ZONES } from "./encounters";
 import { rollMobDrops, rollBossDrops } from "./gear";
 
-function getInitialState(): GameState {
+function getInitialState(preserve?: Pick<GameState, "barrettDefeated" | "completedRaids">): GameState {
   return {
     phase: "title",
     selectedClass: null,
@@ -20,6 +20,8 @@ function getInitialState(): GameState {
     pendingDrops: [],
     abilityMessage: null,
     itemActionMessage: null,
+    barrettDefeated: preserve?.barrettDefeated ?? false,
+    completedRaids: preserve?.completedRaids ?? [],
   };
 }
 
@@ -89,7 +91,15 @@ export function useGameEngine() {
     currentEncounter?.rounds[state.roundIndex] ?? null;
 
   const goToTitle = useCallback(() => {
-    setState(getInitialState());
+    setState((s) => getInitialState({ barrettDefeated: s.barrettDefeated, completedRaids: s.completedRaids }));
+  }, []);
+
+  const goToMainMenu = useCallback(() => {
+    setState((s) => ({ ...s, phase: "main-menu" }));
+  }, []);
+
+  const goToRaidSelect = useCallback(() => {
+    setState((s) => ({ ...s, phase: "raid-select" }));
   }, []);
 
   const goToCharacterSelect = useCallback(() => {
@@ -259,6 +269,7 @@ export function useGameEngine() {
             inventory: newInventory,
             pendingDrops: drops,
             defeatedBosses: newDefeatedBosses,
+            barrettDefeated: true,
           };
         }
 
@@ -333,6 +344,8 @@ export function useGameEngine() {
     currentEncounter,
     currentRound,
     goToTitle,
+    goToMainMenu,
+    goToRaidSelect,
     goToCharacterSelect,
     selectCharacter,
     startGame,

@@ -218,11 +218,151 @@ function GameContent() {
               <Button
                 size="lg"
                 className="text-lg px-12 py-8 bg-primary text-primary-foreground hover:bg-primary/90 font-serif shadow-[0_0_40px_-10px_hsl(var(--primary))]"
-                onClick={game.goToCharacterSelect}
+                onClick={game.goToMainMenu}
                 data-testid="button-begin"
               >
                 Begin Your Quest
               </Button>
+            </motion.div>
+          )}
+
+          {/* ── MAIN MENU ── */}
+          {state.phase === "main-menu" && (
+            <motion.div
+              key="main-menu"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="flex flex-col items-center justify-center text-center space-y-10 py-20"
+            >
+              <div className="space-y-3">
+                <h2 className="text-5xl font-serif font-bold text-primary tracking-tight">
+                  What will you do?
+                </h2>
+                <p className="text-muted-foreground font-serif text-lg">
+                  Choose your path, freshman.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-5 w-full max-w-sm">
+                <Button
+                  size="lg"
+                  className="py-8 text-xl font-serif bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_30px_-8px_hsl(var(--primary))]"
+                  onClick={game.goToCharacterSelect}
+                  data-testid="button-begin-journey"
+                >
+                  Begin Your Journey
+                </Button>
+
+                <div className="relative">
+                  <Button
+                    size="lg"
+                    disabled={!state.barrettDefeated}
+                    className="w-full py-8 text-xl font-serif bg-card border border-border hover:border-primary/50 hover:bg-primary/10 text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    onClick={state.barrettDefeated ? game.goToRaidSelect : undefined}
+                    data-testid="button-start-raid"
+                  >
+                    Start a Raid
+                  </Button>
+                  {!state.barrettDefeated && (
+                    <p className="mt-2 text-xs font-serif text-muted-foreground/60 italic">
+                      Defeat Barrett Luke Hutchins to unlock raids
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <button
+                className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                onClick={game.goToTitle}
+                data-testid="button-back-title"
+              >
+                Back to Title
+              </button>
+            </motion.div>
+          )}
+
+          {/* ── RAID SELECT ── */}
+          {state.phase === "raid-select" && (
+            <motion.div
+              key="raid-select"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="flex flex-col items-center space-y-10 py-12"
+            >
+              <div className="text-center space-y-2">
+                <h2 className="text-4xl font-serif font-bold text-primary">
+                  Select a Raid
+                </h2>
+                <p className="text-muted-foreground font-serif">
+                  You have earned the right to enter. Choose your battlefield.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-5 w-full max-w-lg">
+                {[
+                  {
+                    id: "hayes",
+                    name: "Mr. Hayes's Room",
+                    subtitle: "Raid I",
+                    unlocked: true,
+                  },
+                  {
+                    id: "cronin",
+                    name: "Mr. Cronin's Room",
+                    subtitle: "Raid II",
+                    unlocked: state.completedRaids.includes("hayes"),
+                  },
+                  {
+                    id: "bryant",
+                    name: "Mr. Bryant's Room",
+                    subtitle: "Raid III",
+                    unlocked: state.completedRaids.includes("cronin"),
+                  },
+                ].map((raid) => (
+                  <div key={raid.id} className="relative">
+                    <button
+                      disabled={!raid.unlocked}
+                      data-testid={`button-raid-${raid.id}`}
+                      className={`w-full text-left p-6 rounded-xl border transition-all duration-300 font-serif
+                        ${raid.unlocked
+                          ? "border-border bg-card/60 hover:border-primary hover:shadow-[0_0_20px_-5px_hsl(var(--primary))] hover:bg-primary/5 cursor-pointer"
+                          : "border-border/30 bg-card/20 cursor-not-allowed opacity-40"
+                        }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold tracking-widest text-primary/60 uppercase mb-1">
+                            {raid.subtitle}
+                          </p>
+                          <p className="text-2xl font-bold text-foreground">
+                            {raid.name}
+                          </p>
+                        </div>
+                        <div className="text-3xl">
+                          {raid.unlocked ? "⚔️" : "🔒"}
+                        </div>
+                      </div>
+                      {!raid.unlocked && (
+                        <p className="mt-2 text-sm text-muted-foreground/50 italic">
+                          Complete the previous raid to unlock
+                        </p>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                onClick={game.goToMainMenu}
+                data-testid="button-back-menu"
+              >
+                Back to Menu
+              </button>
             </motion.div>
           )}
 
