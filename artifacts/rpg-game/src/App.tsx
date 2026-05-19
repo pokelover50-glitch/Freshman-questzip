@@ -10,6 +10,95 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { GearItemInstance } from "./game/types";
+import { useState } from "react";
+
+const ACHIEVEMENTS = [
+  {
+    id: "defeat-10-mobs",
+    title: "Hall Monitor's Nightmare",
+    description: "Defeat 10 mobs (7th Grader, 8th Grader, Fellow Freshman, Sophomore, Junior).",
+    goal: 10,
+  },
+];
+
+function AchievementsPanel({
+  achievements,
+  mobsDefeated,
+  onClose,
+}: {
+  achievements: string[];
+  mobsDefeated: number;
+  onClose: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 20, scale: 0.96 }}
+      transition={{ duration: 0.2 }}
+      className="fixed bottom-16 left-4 z-50 w-80 bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
+    >
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm">
+        <h3 className="font-serif font-bold text-primary tracking-wide text-lg">Achievements</h3>
+        <button
+          onClick={onClose}
+          className="text-muted-foreground hover:text-foreground transition-colors text-xl leading-none"
+          data-testid="button-achievements-close"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {ACHIEVEMENTS.map((ach) => {
+          const completed = achievements.includes(ach.id);
+          const progress = ach.id === "defeat-10-mobs" ? Math.min(mobsDefeated, ach.goal) : 0;
+          return (
+            <div
+              key={ach.id}
+              className={`rounded-lg border p-3 transition-colors ${
+                completed
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-border bg-background/40"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 text-xl flex-shrink-0 ${completed ? "opacity-100" : "opacity-30"}`}>
+                  {completed ? "✅" : "🏆"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`font-serif font-bold text-sm ${completed ? "text-primary" : "text-foreground"}`}>
+                    {ach.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                    {ach.description}
+                  </p>
+                  {!completed && (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex justify-between text-xs text-muted-foreground/70 font-serif">
+                        <span>Progress</span>
+                        <span>{progress} / {ach.goal}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-border overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-500"
+                          style={{ width: `${(progress / ach.goal) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {completed && (
+                    <p className="text-xs text-primary/70 font-serif mt-1 italic">Completed!</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
 
 const ZONE_NAMES = ["The Hallways", "The Cafeteria", "The Senior Lounge"];
 
@@ -178,6 +267,7 @@ function DropNotification({
 function GameContent() {
   const game = useGameEngine();
   const { state, currentEncounter, currentRound } = game;
+  const [showAchievements, setShowAchievements] = useState(false);
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground overflow-hidden selection:bg-primary/30">
@@ -799,6 +889,32 @@ function GameContent() {
           <DropNotification
             drops={state.pendingDrops}
             onDismiss={game.dismissDrops}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Achievements floating button */}
+      <button
+        onClick={() => setShowAchievements((v) => !v)}
+        data-testid="button-achievements-toggle"
+        className="fixed bottom-4 left-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/60 hover:bg-primary/10 transition-all duration-200 font-serif text-sm text-foreground shadow-lg"
+      >
+        <span className="text-base">🏆</span>
+        <span>Achievements</span>
+        {state.achievements.length > 0 && (
+          <span className="ml-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+            {state.achievements.length}
+          </span>
+        )}
+      </button>
+
+      {/* Achievements panel */}
+      <AnimatePresence>
+        {showAchievements && (
+          <AchievementsPanel
+            achievements={state.achievements}
+            mobsDefeated={state.mobsDefeated}
+            onClose={() => setShowAchievements(false)}
           />
         )}
       </AnimatePresence>

@@ -97,4 +97,6 @@ export interface GameState {
   itemActionMessage: string | null;
   barrettDefeated: boolean;
   completedRaids: string[];
+  mobsDefeated: number;
+  achievements: string[];
 }

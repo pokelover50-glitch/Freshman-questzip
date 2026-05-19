@@ -3,7 +3,17 @@ import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemInstance } fr
 import { ZONES } from "./encounters";
 import { rollMobDrops, rollBossDrops } from "./gear";
 
-function getInitialState(preserve?: Pick<GameState, "barrettDefeated" | "completedRaids">): GameState {
+const ACHIEVEMENT_MOB_IDS = new Set([
+  "seventh-grader",
+  "eighth-grader",
+  "fellow-freshman",
+  "sophomore",
+  "junior",
+]);
+
+function getInitialState(
+  preserve?: Pick<GameState, "barrettDefeated" | "completedRaids" | "mobsDefeated" | "achievements">
+): GameState {
   return {
     phase: "title",
     selectedClass: null,
@@ -22,6 +32,8 @@ function getInitialState(preserve?: Pick<GameState, "barrettDefeated" | "complet
     itemActionMessage: null,
     barrettDefeated: preserve?.barrettDefeated ?? false,
     completedRaids: preserve?.completedRaids ?? [],
+    mobsDefeated: preserve?.mobsDefeated ?? 0,
+    achievements: preserve?.achievements ?? [],
   };
 }
 
@@ -99,7 +111,12 @@ export function useGameEngine() {
     currentEncounter?.rounds[state.roundIndex] ?? null;
 
   const goToTitle = useCallback(() => {
-    setState((s) => getInitialState({ barrettDefeated: s.barrettDefeated, completedRaids: s.completedRaids }));
+    setState((s) => getInitialState({
+      barrettDefeated: s.barrettDefeated,
+      completedRaids: s.completedRaids,
+      mobsDefeated: s.mobsDefeated,
+      achievements: s.achievements,
+    }));
   }, []);
 
   const goToMainMenu = useCallback(() => {
@@ -296,6 +313,14 @@ export function useGameEngine() {
           ? [...s.defeatedBosses, currentEncounter.enemyName]
           : s.defeatedBosses;
 
+        const isMobKill = !currentEncounter.isBoss && ACHIEVEMENT_MOB_IDS.has(currentEncounter.id);
+        const newMobsDefeated = isMobKill ? s.mobsDefeated + 1 : s.mobsDefeated;
+        const alreadyHas10Mobs = s.achievements.includes("defeat-10-mobs");
+        const newAchievements =
+          !alreadyHas10Mobs && newMobsDefeated >= 10
+            ? [...s.achievements, "defeat-10-mobs"]
+            : s.achievements;
+
         if (isLastZone && isLastInZone) {
           return {
             ...s,
@@ -305,6 +330,8 @@ export function useGameEngine() {
             pendingDrops: drops,
             defeatedBosses: newDefeatedBosses,
             barrettDefeated: true,
+            mobsDefeated: newMobsDefeated,
+            achievements: newAchievements,
           };
         }
 
@@ -324,6 +351,8 @@ export function useGameEngine() {
             inventory: newInventory,
             pendingDrops: drops,
             abilityMessage: null,
+            mobsDefeated: newMobsDefeated,
+            achievements: newAchievements,
           };
         }
 
@@ -340,6 +369,8 @@ export function useGameEngine() {
           inventory: newInventory,
           pendingDrops: drops,
           abilityMessage: null,
+          mobsDefeated: newMobsDefeated,
+          achievements: newAchievements,
         };
       }
 
