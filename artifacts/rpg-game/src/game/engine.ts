@@ -308,7 +308,6 @@ export function useGameEngine() {
         const isLastInZone = s.encounterIndex >= ZONES[s.zoneIndex].length - 1;
         const isLastZone = s.zoneIndex >= ZONES.length - 1;
 
-        const newInventory = [...s.inventory, ...drops, ...sandwichReward];
         const newDefeatedBosses = currentEncounter.isBoss
           ? [...s.defeatedBosses, currentEncounter.enemyName]
           : s.defeatedBosses;
@@ -327,6 +326,7 @@ export function useGameEngine() {
           : [];
 
         const allDrops = [...drops, ...sandwichReward];
+        const newInventory = [...s.inventory, ...allDrops];
 
         if (isLastZone && isLastInZone) {
           return {
