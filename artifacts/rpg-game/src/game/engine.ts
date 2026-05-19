@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemInstance } from "./types";
 import { ZONES } from "./encounters";
-import { rollMobDrops, rollBossDrops } from "./gear";
+import { rollMobDrops, rollBossDrops, FOOD_ITEMS } from "./gear";
 
 const ACHIEVEMENT_MOB_IDS = new Set([
   "seventh-grader",
@@ -308,7 +308,7 @@ export function useGameEngine() {
         const isLastInZone = s.encounterIndex >= ZONES[s.zoneIndex].length - 1;
         const isLastZone = s.zoneIndex >= ZONES.length - 1;
 
-        const newInventory = [...s.inventory, ...drops];
+        const newInventory = [...s.inventory, ...drops, ...sandwichReward];
         const newDefeatedBosses = currentEncounter.isBoss
           ? [...s.defeatedBosses, currentEncounter.enemyName]
           : s.defeatedBosses;
@@ -316,10 +316,17 @@ export function useGameEngine() {
         const isMobKill = !currentEncounter.isBoss && ACHIEVEMENT_MOB_IDS.has(currentEncounter.id);
         const newMobsDefeated = isMobKill ? s.mobsDefeated + 1 : s.mobsDefeated;
         const alreadyHas10Mobs = s.achievements.includes("defeat-10-mobs");
-        const newAchievements =
-          !alreadyHas10Mobs && newMobsDefeated >= 10
-            ? [...s.achievements, "defeat-10-mobs"]
-            : s.achievements;
+        const achievementJustUnlocked = !alreadyHas10Mobs && newMobsDefeated >= 10;
+        const newAchievements = achievementJustUnlocked
+          ? [...s.achievements, "defeat-10-mobs"]
+          : s.achievements;
+
+        const sandwichDef = FOOD_ITEMS.find((f) => f.id === "sandwich")!;
+        const sandwichReward: GearItemInstance[] = achievementJustUnlocked
+          ? [{ instanceId: `sandwich-reward-${Math.random().toString(36).slice(2, 9)}`, def: sandwichDef }]
+          : [];
+
+        const allDrops = [...drops, ...sandwichReward];
 
         if (isLastZone && isLastInZone) {
           return {
@@ -327,7 +334,7 @@ export function useGameEngine() {
             phase: "victory",
             showOutcome: false,
             inventory: newInventory,
-            pendingDrops: drops,
+            pendingDrops: allDrops,
             defeatedBosses: newDefeatedBosses,
             barrettDefeated: true,
             mobsDefeated: newMobsDefeated,
@@ -349,7 +356,7 @@ export function useGameEngine() {
             showOutcome: false,
             lastOutcome: null,
             inventory: newInventory,
-            pendingDrops: drops,
+            pendingDrops: allDrops,
             abilityMessage: null,
             mobsDefeated: newMobsDefeated,
             achievements: newAchievements,
@@ -367,7 +374,7 @@ export function useGameEngine() {
           showOutcome: false,
           lastOutcome: null,
           inventory: newInventory,
-          pendingDrops: drops,
+          pendingDrops: allDrops,
           abilityMessage: null,
           mobsDefeated: newMobsDefeated,
           achievements: newAchievements,
