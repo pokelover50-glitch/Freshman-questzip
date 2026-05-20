@@ -10,8 +10,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { GearItemInstance } from "./game/types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { loadSave, hasSave, formatSaveDate } from "./game/saveLoad";
+import { ZONE_NAMES_SHORT } from "./game/encounters";
 
 const ACHIEVEMENTS = [
   {
@@ -358,8 +359,6 @@ function DropNotification({
   );
 }
 
-const ZONE_NAMES_SHORT = ["Hallways", "Cafeteria", "Senior Lounge"];
-
 function GameContent() {
   const game = useGameEngine();
   const { state, currentEncounter, currentRound } = game;
@@ -368,6 +367,19 @@ function GameContent() {
   const [saveExists, setSaveExists] = useState(() => hasSave());
   const [saveInfo, setSaveInfo] = useState(() => loadSave());
   const [showSavedBadge, setShowSavedBadge] = useState(false);
+
+  // Shuffle choices once per round so A/B aren't always the "correct" picks
+  const shuffledChoices = useMemo(() => {
+    if (!currentRound) return [];
+    const arr = [...currentRound.choices];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  // Re-shuffle only when the round actually changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.zoneIndex, state.encounterIndex, state.roundIndex]);
 
   // Refresh save existence when game state changes
   useEffect(() => {
@@ -832,7 +844,7 @@ function GameContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <AnimatePresence>
                     {!state.showOutcome &&
-                      currentRound.choices.map((choice, idx) => (
+                      shuffledChoices.map((choice, idx) => (
                         <motion.div
                           key={idx}
                           initial={{ opacity: 0, y: 20 }}

@@ -1,16 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemInstance } from "./types";
-import { ZONES } from "./encounters";
+import { ZONES, ACHIEVEMENT_MOB_IDS } from "./encounters";
 import { rollMobDrops, rollBossDrops, FOOD_ITEMS } from "./gear";
 import { saveGame, loadSave, deleteSave, type SaveData } from "./saveLoad";
-
-const ACHIEVEMENT_MOB_IDS = new Set([
-  "seventh-grader",
-  "eighth-grader",
-  "fellow-freshman",
-  "sophomore",
-  "junior",
-]);
 
 function getInitialState(
   preserve?: Pick<GameState, "barrettDefeated" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements">
