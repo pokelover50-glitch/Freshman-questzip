@@ -125,7 +125,8 @@ export function useGameEngine() {
       saveGame(clean);
       setLastSavedAt(Date.now());
     } else if (state.phase === "victory") {
-      saveGame(state);
+      const clean: GameState = { ...state, pendingDrops: [], showOutcome: false, lastOutcome: null, abilityMessage: null, itemActionMessage: null };
+      saveGame(clean);
       setLastSavedAt(Date.now());
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

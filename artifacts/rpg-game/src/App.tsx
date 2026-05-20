@@ -613,6 +613,15 @@ function GameContent() {
                 </p>
               </div>
 
+              <div className="flex justify-center">
+                <button
+                  className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                  onClick={game.goToMainMenu}
+                >
+                  ← Back to Menu
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {CHARACTER_CLASSES.map((cls) => {
                   const isLocked = cls.id === "hidden";
