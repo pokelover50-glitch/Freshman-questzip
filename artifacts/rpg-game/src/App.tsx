@@ -1063,7 +1063,7 @@ function GameContent() {
       >
         <span className="text-base">🏆</span>
         <span>Achievements</span>
-        {state.unclaimedAchievements.length > 0 ? (
+        {(state.unclaimedAchievements ?? []).length > 0 ? (
           <span className="ml-1 bg-yellow-500 text-black text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
             {state.unclaimedAchievements.length}
           </span>

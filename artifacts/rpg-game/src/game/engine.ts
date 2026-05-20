@@ -105,6 +105,19 @@ export function useGameEngine() {
   const [state, setState] = useState<GameState>(getInitialState());
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
+  // Normalize any fields that may be missing from stale/pre-migration state
+  useEffect(() => {
+    setState((s) => ({
+      ...s,
+      unclaimedAchievements: s.unclaimedAchievements ?? [],
+      achievements: s.achievements ?? [],
+      inventory: s.inventory ?? [],
+      pendingDrops: s.pendingDrops ?? [],
+      defeatedBosses: s.defeatedBosses ?? [],
+      completedRaids: s.completedRaids ?? [],
+    }));
+  }, []);
+
   // Auto-save when a fresh encounter begins or on victory
   useEffect(() => {
     if (state.phase === "encounter" && !state.showOutcome) {
@@ -121,7 +134,16 @@ export function useGameEngine() {
   const loadSavedGame = useCallback((): SaveData | null => {
     const saveData = loadSave();
     if (!saveData) return null;
-    let loadedState = saveData.state;
+    let loadedState: GameState = {
+      ...saveData.state,
+      // Normalize fields that may be missing in older saves
+      unclaimedAchievements: saveData.state.unclaimedAchievements ?? [],
+      achievements: saveData.state.achievements ?? [],
+      completedRaids: saveData.state.completedRaids ?? [],
+      inventory: saveData.state.inventory ?? [],
+      pendingDrops: saveData.state.pendingDrops ?? [],
+      defeatedBosses: saveData.state.defeatedBosses ?? [],
+    };
     if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over") {
       loadedState = { ...loadedState, phase: "main-menu" };
     }
