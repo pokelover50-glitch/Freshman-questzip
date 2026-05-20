@@ -377,9 +377,9 @@ function GameContent() {
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
-  // Re-shuffle only when the round actually changes
+  // currentRound is a new reference each time the round changes — safe dep
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.zoneIndex, state.encounterIndex, state.roundIndex]);
+  }, [currentRound]);
 
   // Refresh save existence when game state changes
   useEffect(() => {
