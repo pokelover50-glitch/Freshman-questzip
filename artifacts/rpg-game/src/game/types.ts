@@ -100,4 +100,5 @@ export interface GameState {
   completedRaids: string[];
   mobsDefeated: number;
   achievements: string[];
+  unclaimedAchievements: string[];
 }

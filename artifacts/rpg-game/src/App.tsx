@@ -24,12 +24,16 @@ const ACHIEVEMENTS = [
 
 function AchievementsPanel({
   achievements,
+  unclaimedAchievements,
   mobsDefeated,
   onClose,
+  onClaim,
 }: {
   achievements: string[];
+  unclaimedAchievements: string[];
   mobsDefeated: number;
   onClose: () => void;
+  onClaim: (id: string) => void;
 }) {
   return (
     <motion.div
@@ -52,23 +56,27 @@ function AchievementsPanel({
 
       <div className="p-4 space-y-3">
         {ACHIEVEMENTS.map((ach) => {
-          const completed = achievements.includes(ach.id);
+          const claimed = achievements.includes(ach.id);
+          const unclaimed = unclaimedAchievements.includes(ach.id);
+          const completed = claimed || unclaimed;
           const progress = ach.id === "defeat-10-mobs" ? Math.min(mobsDefeated, ach.goal) : 0;
           return (
             <div
               key={ach.id}
-              className={`rounded-lg border p-3 transition-colors ${
-                completed
+              className={`rounded-lg border p-3 transition-all ${
+                claimed
                   ? "border-primary/40 bg-primary/5"
+                  : unclaimed
+                  ? "border-yellow-500/60 bg-yellow-500/10 shadow-[0_0_12px_-4px_rgba(234,179,8,0.4)]"
                   : "border-border bg-background/40"
               }`}
             >
               <div className="flex items-start gap-3">
                 <div className={`mt-0.5 text-xl flex-shrink-0 ${completed ? "opacity-100" : "opacity-30"}`}>
-                  {completed ? "✅" : "🏆"}
+                  {claimed ? "✅" : unclaimed ? "🎁" : "🏆"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`font-serif font-bold text-sm ${completed ? "text-primary" : "text-foreground"}`}>
+                  <p className={`font-serif font-bold text-sm ${claimed ? "text-primary" : unclaimed ? "text-yellow-400" : "text-foreground"}`}>
                     {ach.title}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
@@ -88,8 +96,22 @@ function AchievementsPanel({
                       </div>
                     </div>
                   )}
-                  {completed && (
-                    <p className="text-xs text-primary/70 font-serif mt-1 italic">Completed!</p>
+                  {unclaimed && (
+                    <div className="mt-2 space-y-1.5">
+                      <p className="text-xs text-yellow-400/80 font-serif italic">
+                        Reward: 🥪 Sandwich — click to claim!
+                      </p>
+                      <button
+                        onClick={() => onClaim(ach.id)}
+                        className="w-full py-1.5 rounded-md text-xs font-serif font-bold border border-yellow-500/60 bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors"
+                        data-testid={`button-claim-${ach.id}`}
+                      >
+                        ✓ Claim Reward
+                      </button>
+                    </div>
+                  )}
+                  {claimed && (
+                    <p className="text-xs text-primary/70 font-serif mt-1 italic">Claimed!</p>
                   )}
                 </div>
               </div>
@@ -279,7 +301,7 @@ function BackpackButton({
     <button
       onClick={onClick}
       data-testid="button-backpack"
-      className="fixed bottom-4 right-4 z-40 flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/60 hover:bg-primary/10 transition-all duration-200 font-serif text-sm text-foreground shadow-lg"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/60 hover:bg-primary/10 transition-all duration-200 font-serif text-sm text-foreground shadow-lg"
     >
       <span className="text-base">🎒</span>
       <span>Backpack</span>
@@ -1041,11 +1063,15 @@ function GameContent() {
       >
         <span className="text-base">🏆</span>
         <span>Achievements</span>
-        {state.achievements.length > 0 && (
+        {state.unclaimedAchievements.length > 0 ? (
+          <span className="ml-1 bg-yellow-500 text-black text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
+            {state.unclaimedAchievements.length}
+          </span>
+        ) : state.achievements.length > 0 ? (
           <span className="ml-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
             {state.achievements.length}
           </span>
-        )}
+        ) : null}
       </button>
 
       {/* Achievements panel */}
@@ -1053,8 +1079,10 @@ function GameContent() {
         {showAchievements && (
           <AchievementsPanel
             achievements={state.achievements}
+            unclaimedAchievements={state.unclaimedAchievements}
             mobsDefeated={state.mobsDefeated}
             onClose={() => setShowAchievements(false)}
+            onClaim={game.claimAchievement}
           />
         )}
       </AnimatePresence>

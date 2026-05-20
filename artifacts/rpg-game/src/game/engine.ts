@@ -13,7 +13,7 @@ const ACHIEVEMENT_MOB_IDS = new Set([
 ]);
 
 function getInitialState(
-  preserve?: Pick<GameState, "barrettDefeated" | "completedRaids" | "mobsDefeated" | "achievements">
+  preserve?: Pick<GameState, "barrettDefeated" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements">
 ): GameState {
   return {
     phase: "title",
@@ -35,6 +35,7 @@ function getInitialState(
     completedRaids: preserve?.completedRaids ?? [],
     mobsDefeated: preserve?.mobsDefeated ?? 0,
     achievements: preserve?.achievements ?? [],
+    unclaimedAchievements: preserve?.unclaimedAchievements ?? [],
   };
 }
 
@@ -151,6 +152,7 @@ export function useGameEngine() {
       completedRaids: s.completedRaids,
       mobsDefeated: s.mobsDefeated,
       achievements: s.achievements,
+      unclaimedAchievements: s.unclaimedAchievements,
     }));
   }, []);
 
@@ -349,18 +351,15 @@ export function useGameEngine() {
 
         const isMobKill = !currentEncounter.isBoss && ACHIEVEMENT_MOB_IDS.has(currentEncounter.id);
         const newMobsDefeated = isMobKill ? s.mobsDefeated + 1 : s.mobsDefeated;
-        const alreadyHas10Mobs = s.achievements.includes("defeat-10-mobs");
-        const achievementJustUnlocked = !alreadyHas10Mobs && newMobsDefeated >= 10;
-        const newAchievements = achievementJustUnlocked
-          ? [...s.achievements, "defeat-10-mobs"]
-          : s.achievements;
+        const alreadyEarned10Mobs =
+          s.achievements.includes("defeat-10-mobs") ||
+          s.unclaimedAchievements.includes("defeat-10-mobs");
+        const achievementJustEarned = !alreadyEarned10Mobs && newMobsDefeated >= 10;
+        const newUnclaimedAchievements = achievementJustEarned
+          ? [...s.unclaimedAchievements, "defeat-10-mobs"]
+          : s.unclaimedAchievements;
 
-        const sandwichDef = FOOD_ITEMS.find((f) => f.id === "sandwich")!;
-        const sandwichReward: GearItemInstance[] = achievementJustUnlocked
-          ? [{ instanceId: `sandwich-reward-${Math.random().toString(36).slice(2, 9)}`, def: sandwichDef }]
-          : [];
-
-        const allDrops = [...drops, ...sandwichReward];
+        const allDrops = drops;
         const newInventory = [...s.inventory, ...allDrops];
 
         if (isLastZone && isLastInZone) {
@@ -373,7 +372,7 @@ export function useGameEngine() {
             defeatedBosses: newDefeatedBosses,
             barrettDefeated: true,
             mobsDefeated: newMobsDefeated,
-            achievements: newAchievements,
+            unclaimedAchievements: newUnclaimedAchievements,
           };
         }
 
@@ -394,7 +393,7 @@ export function useGameEngine() {
             pendingDrops: allDrops,
             abilityMessage: null,
             mobsDefeated: newMobsDefeated,
-            achievements: newAchievements,
+            unclaimedAchievements: newUnclaimedAchievements,
           };
         }
 
@@ -412,7 +411,7 @@ export function useGameEngine() {
           pendingDrops: allDrops,
           abilityMessage: null,
           mobsDefeated: newMobsDefeated,
-          achievements: newAchievements,
+          unclaimedAchievements: newUnclaimedAchievements,
         };
       }
 
@@ -447,6 +446,23 @@ export function useGameEngine() {
     setState((s) => ({ ...s, itemActionMessage: null }));
   }, []);
 
+  const claimAchievement = useCallback((id: string) => {
+    setState((s) => {
+      if (!s.unclaimedAchievements.includes(id)) return s;
+      const sandwichDef = FOOD_ITEMS.find((f) => f.id === "sandwich")!;
+      const sandwichInstance: GearItemInstance = {
+        instanceId: `sandwich-claim-${Math.random().toString(36).slice(2, 9)}`,
+        def: sandwichDef,
+      };
+      return {
+        ...s,
+        achievements: [...s.achievements, id],
+        unclaimedAchievements: s.unclaimedAchievements.filter((a) => a !== id),
+        inventory: [...s.inventory, sandwichInstance],
+      };
+    });
+  }, []);
+
   return {
     state,
     currentEncounter,
@@ -463,6 +479,7 @@ export function useGameEngine() {
     continueAfterOutcome,
     dismissDrops,
     dismissItemMessage,
+    claimAchievement,
     loadSavedGame,
     clearSave,
     lastSavedAt,
