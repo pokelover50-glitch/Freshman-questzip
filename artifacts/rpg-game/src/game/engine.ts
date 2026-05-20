@@ -1,7 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemInstance } from "./types";
 import { ZONES } from "./encounters";
 import { rollMobDrops, rollBossDrops, FOOD_ITEMS } from "./gear";
+import { saveGame, loadSave, deleteSave, type SaveData } from "./saveLoad";
 
 const ACHIEVEMENT_MOB_IDS = new Set([
   "seventh-grader",
@@ -101,6 +102,31 @@ function applyClassAbility(
 
 export function useGameEngine() {
   const [state, setState] = useState<GameState>(getInitialState());
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+
+  // Auto-save when a fresh encounter begins or on victory
+  useEffect(() => {
+    if (state.phase === "encounter" && !state.showOutcome) {
+      const clean: GameState = { ...state, pendingDrops: [], showOutcome: false, lastOutcome: null, abilityMessage: null, itemActionMessage: null };
+      saveGame(clean);
+      setLastSavedAt(Date.now());
+    } else if (state.phase === "victory") {
+      saveGame(state);
+      setLastSavedAt(Date.now());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.zoneIndex, state.encounterIndex, state.phase]);
+
+  const loadSavedGame = useCallback((): SaveData | null => {
+    const saveData = loadSave();
+    if (!saveData) return null;
+    setState(saveData.state);
+    return saveData;
+  }, []);
+
+  const clearSave = useCallback(() => {
+    deleteSave();
+  }, []);
 
   const currentEncounter =
     state.phase === "encounter"
@@ -427,6 +453,9 @@ export function useGameEngine() {
     continueAfterOutcome,
     dismissDrops,
     dismissItemMessage,
+    loadSavedGame,
+    clearSave,
+    lastSavedAt,
     ZONES,
   };
 }

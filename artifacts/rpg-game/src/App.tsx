@@ -10,7 +10,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { GearItemInstance } from "./game/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { loadSave, hasSave, formatSaveDate } from "./game/saveLoad";
 
 const ACHIEVEMENTS = [
   {
@@ -264,10 +265,29 @@ function DropNotification({
   );
 }
 
+const ZONE_NAMES_SHORT = ["Hallways", "Cafeteria", "Senior Lounge"];
+
 function GameContent() {
   const game = useGameEngine();
   const { state, currentEncounter, currentRound } = game;
   const [showAchievements, setShowAchievements] = useState(false);
+  const [saveExists, setSaveExists] = useState(() => hasSave());
+  const [saveInfo, setSaveInfo] = useState(() => loadSave());
+  const [showSavedBadge, setShowSavedBadge] = useState(false);
+
+  // Refresh save existence when game state changes
+  useEffect(() => {
+    setSaveExists(hasSave());
+    setSaveInfo(loadSave());
+  }, [game.lastSavedAt]);
+
+  // Flash "saved" badge briefly after each auto-save
+  useEffect(() => {
+    if (!game.lastSavedAt) return;
+    setShowSavedBadge(true);
+    const t = setTimeout(() => setShowSavedBadge(false), 2500);
+    return () => clearTimeout(t);
+  }, [game.lastSavedAt]);
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground overflow-hidden selection:bg-primary/30">
@@ -305,14 +325,38 @@ function GameContent() {
                   Survive the halls. Defeat the legends. Become the myth.
                 </p>
               </div>
-              <Button
-                size="lg"
-                className="text-lg px-12 py-8 bg-primary text-primary-foreground hover:bg-primary/90 font-serif shadow-[0_0_40px_-10px_hsl(var(--primary))]"
-                onClick={game.goToMainMenu}
-                data-testid="button-begin"
-              >
-                Begin Your Quest
-              </Button>
+              <div className="flex flex-col items-center gap-4 w-full max-w-xs">
+                {saveExists && saveInfo && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full"
+                  >
+                    <Button
+                      size="lg"
+                      className="w-full text-lg px-12 py-8 bg-primary text-primary-foreground hover:bg-primary/90 font-serif shadow-[0_0_40px_-10px_hsl(var(--primary))]"
+                      onClick={() => game.loadSavedGame()}
+                      data-testid="button-continue"
+                    >
+                      Continue Quest
+                    </Button>
+                    <p className="mt-1.5 text-xs text-muted-foreground/60 font-serif text-center">
+                      {ZONE_NAMES_SHORT[saveInfo.zoneIndex] ?? "Zone " + (saveInfo.zoneIndex + 1)}
+                      {" · "}Encounter {saveInfo.encounterIndex + 1}
+                      {" · "}Saved {formatSaveDate(saveInfo.savedAt)}
+                    </p>
+                  </motion.div>
+                )}
+                <Button
+                  size="lg"
+                  variant={saveExists ? "outline" : "default"}
+                  className={`w-full font-serif shadow-[0_0_40px_-10px_hsl(var(--primary))] ${saveExists ? "text-base px-10 py-6 border-primary/40 hover:bg-primary/10" : "text-lg px-12 py-8 bg-primary text-primary-foreground hover:bg-primary/90"}`}
+                  onClick={game.goToMainMenu}
+                  data-testid="button-begin"
+                >
+                  {saveExists ? "New Game" : "Begin Your Quest"}
+                </Button>
+              </div>
             </motion.div>
           )}
 
@@ -620,9 +664,23 @@ function GameContent() {
                     max={currentEncounter.enemyMaxHp}
                     reverse
                   />
-                  <div className="col-span-2 text-center text-xs font-serif tracking-widest text-primary/70 uppercase">
-                    {ZONE_NAMES[state.zoneIndex]} — Encounter{" "}
-                    {state.encounterIndex + 1}
+                  <div className="col-span-2 flex items-center justify-center gap-3">
+                    <span className="text-xs font-serif tracking-widest text-primary/70 uppercase">
+                      {ZONE_NAMES[state.zoneIndex]} — Encounter{" "}
+                      {state.encounterIndex + 1}
+                    </span>
+                    <AnimatePresence>
+                      {showSavedBadge && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          className="text-[10px] font-serif text-accent/80 border border-accent/30 rounded px-1.5 py-0.5 bg-accent/10"
+                        >
+                          ✓ Saved
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
 
