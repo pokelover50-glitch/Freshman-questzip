@@ -368,7 +368,7 @@ function GameContent() {
   const [saveInfo, setSaveInfo] = useState(() => loadSave());
   const [showSavedBadge, setShowSavedBadge] = useState(false);
 
-  // Shuffle choices once per round so A/B aren't always the "correct" picks
+  // Pick 4 random choices from the pool each round — cycles through all options over time
   const shuffledChoices = useMemo(() => {
     if (!currentRound) return [];
     const arr = [...currentRound.choices];
@@ -376,7 +376,7 @@ function GameContent() {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
-    return arr;
+    return arr.slice(0, 4);
   // currentRound is a new reference each time the round changes — safe dep
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRound]);
