@@ -80,46 +80,42 @@ export const FOOD_ITEMS: GearItemDef[] = [
   },
 ];
 
-export const BOSS_ITEMS: GearItemDef[] = [
+export const CHEST_ITEMS: GearItemDef[] = [
   {
-    id: "mega-knight",
-    name: "Mega Knight",
-    emoji: "⚔️",
-    description: "Deals 50 damage to mob enemies. Cannot be used on bosses.",
-    damage: 50,
-    target: "mob-only",
-    isFromBoss: true,
-    dropChance: 0.65,
-  },
-  {
-    id: "christian-vollstedt",
-    name: "Christian Vollstedt",
-    emoji: "🎓",
-    description: "Deals 2000 damage to any enemy except Barrett Luke Hutchins.",
-    damage: 2000,
-    target: "non-barrett",
-    isFromBoss: true,
-    dropChance: 0.25,
-  },
-  {
-    id: "mr-cronin",
-    name: "Mr. Cronin",
-    emoji: "📐",
-    description: "One shots Barrett Luke Hutchins only.",
-    damage: 9999,
-    target: "barrett-only",
-    isFromBoss: true,
-    dropChance: 0.15,
-  },
-  {
-    id: "dom",
-    name: "Dom",
-    emoji: "💀",
-    description: "Instantly defeats ANY enemy in the game. No exceptions.",
-    damage: 9999,
+    id: "wooden-chest",
+    name: "Wooden Chest",
+    emoji: "📦",
+    description: "A common chest. Contains unknown rewards. (Coming Soon)",
+    damage: 0,
     target: "any",
     isFromBoss: true,
-    dropChance: 0.05,
+    dropChance: 0.55,
+    isChest: true,
+    stackable: true,
+  },
+  {
+    id: "bronze-chest",
+    name: "Bronze Chest",
+    emoji: "🧰",
+    description: "An uncommon chest. Contains better rewards. (Coming Soon)",
+    damage: 0,
+    target: "any",
+    isFromBoss: true,
+    dropChance: 0.35,
+    isChest: true,
+    stackable: true,
+  },
+  {
+    id: "silver-chest",
+    name: "Silver Chest",
+    emoji: "🔮",
+    description: "A rare chest. Contains powerful rewards. (Coming Soon)",
+    damage: 0,
+    target: "any",
+    isFromBoss: true,
+    dropChance: 0.10,
+    isChest: true,
+    stackable: true,
   },
 ];
 
@@ -165,6 +161,10 @@ export function rollMobDrops(encounterId?: string): GearItemInstance[] {
 }
 
 export function rollBossDrops(): GearItemInstance[] {
-  const picked = weightedPick(BOSS_ITEMS);
-  return picked ? [makeInstance(picked)] : [];
+  const roll = Math.random() * 100;
+  let chest: GearItemDef;
+  if (roll < 55) chest = CHEST_ITEMS[0];
+  else if (roll < 90) chest = CHEST_ITEMS[1];
+  else chest = CHEST_ITEMS[2];
+  return [makeInstance(chest)];
 }

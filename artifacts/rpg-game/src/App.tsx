@@ -147,75 +147,146 @@ function HpBar({
   );
 }
 
-function GearSlot({
-  item,
-  onUse,
-  disabled,
-}: {
-  item: GearItemInstance;
-  onUse: (id: string) => void;
-  disabled: boolean;
-}) {
-  return (
-    <motion.button
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      whileHover={{ scale: 1.1, y: -4 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={() => onUse(item.instanceId)}
-      disabled={disabled}
-      data-testid={`gear-slot-${item.def.id}-${item.instanceId}`}
-      title={`${item.def.name}: ${item.def.description}`}
-      className="relative flex flex-col items-center justify-center w-14 h-14 rounded-lg border-2 border-primary/40 bg-card/80 hover:border-primary hover:bg-primary/10 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed group shadow-md hover:shadow-[0_0_12px_-2px_hsl(var(--primary))]"
-    >
-      <span className="text-2xl leading-none">{item.def.emoji}</span>
-      <span className="text-[9px] text-muted-foreground font-serif mt-0.5 truncate max-w-[52px] text-center leading-tight">
-        {item.def.name}
-      </span>
-      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-background border border-border rounded-md p-2 text-xs font-serif w-40 text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
-        <div className="font-bold text-primary mb-0.5">{item.def.name}</div>
-        <div className="text-muted-foreground">{item.def.description}</div>
-      </div>
-    </motion.button>
-  );
-}
-
-function Hotbar({
+function InventoryPanel({
   inventory,
   onUse,
-  encounterPhase,
-  showOutcome,
+  canUseItems,
+  onClose,
 }: {
   inventory: GearItemInstance[];
   onUse: (id: string) => void;
-  encounterPhase: boolean;
-  showOutcome: boolean;
+  canUseItems: boolean;
+  onClose: () => void;
 }) {
-  if (!encounterPhase) return null;
+  const chests = inventory.filter((i) => i.def.isChest);
+  const usables = inventory.filter((i) => !i.def.isChest);
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pb-3 pt-2 bg-gradient-to-t from-background/95 to-transparent pointer-events-none">
-      <div className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-xl border border-border/60 bg-card/70 backdrop-blur-md shadow-2xl">
-        <span className="text-xs font-serif text-muted-foreground uppercase tracking-widest mr-2 shrink-0">
-          Gear
-        </span>
-        {inventory.length === 0 ? (
-          <span className="text-xs font-serif text-muted-foreground/50 italic px-4">
-            No items yet
-          </span>
-        ) : (
-          <div className="flex gap-2 flex-wrap max-w-[420px]">
-            {inventory.map((item) => (
-              <GearSlot
-                key={item.instanceId}
-                item={item}
-                onUse={onUse}
-                disabled={showOutcome}
-              />
-            ))}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+    >
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ y: 80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 80, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="relative z-10 w-full max-w-lg mx-4 mb-4 sm:mb-0 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card/80 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🎒</span>
+            <h3 className="font-serif font-bold text-primary tracking-wide text-lg">Backpack</h3>
+            <span className="text-xs text-muted-foreground font-serif">({inventory.length} items)</span>
           </div>
-        )}
-      </div>
-    </div>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors text-xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
+          {inventory.length === 0 && (
+            <p className="text-center text-muted-foreground font-serif italic text-sm py-8">
+              Your backpack is empty. Defeat enemies to collect items!
+            </p>
+          )}
+
+          {usables.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
+                Items
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {usables.map((item) => (
+                  <div
+                    key={item.instanceId}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background/40 hover:border-primary/40 transition-colors"
+                  >
+                    <span className="text-3xl shrink-0">{item.def.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-serif font-bold text-sm text-foreground">{item.def.name}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
+                    </div>
+                    <button
+                      onClick={() => { onUse(item.instanceId); onClose(); }}
+                      disabled={!canUseItems}
+                      className="shrink-0 px-3 py-1.5 rounded-md text-xs font-serif font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Use
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {chests.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
+                Chests
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {chests.map((item) => (
+                  <div
+                    key={item.instanceId}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-primary/20 bg-primary/5"
+                  >
+                    <span className="text-3xl shrink-0">{item.def.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-serif font-bold text-sm text-primary">{item.def.name}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {item.def.id === "wooden-chest" && "Common chest from a defeated boss."}
+                        {item.def.id === "bronze-chest" && "Uncommon chest from a defeated boss."}
+                        {item.def.id === "silver-chest" && "Rare chest from a defeated boss."}
+                      </p>
+                    </div>
+                    <button
+                      disabled
+                      className="shrink-0 px-3 py-1.5 rounded-md text-xs font-serif font-bold border border-border text-muted-foreground/50 bg-card cursor-not-allowed"
+                      title="Opening chests is coming soon!"
+                    >
+                      🔒 Soon
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function BackpackButton({
+  inventory,
+  onClick,
+}: {
+  inventory: GearItemInstance[];
+  onClick: () => void;
+}) {
+  if (inventory.length === 0) return null;
+  return (
+    <button
+      onClick={onClick}
+      data-testid="button-backpack"
+      className="fixed bottom-4 right-4 z-40 flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/60 hover:bg-primary/10 transition-all duration-200 font-serif text-sm text-foreground shadow-lg"
+    >
+      <span className="text-base">🎒</span>
+      <span>Backpack</span>
+      <span className="ml-1 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+        {inventory.length}
+      </span>
+    </button>
   );
 }
 
@@ -271,6 +342,7 @@ function GameContent() {
   const game = useGameEngine();
   const { state, currentEncounter, currentRound } = game;
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showBackpack, setShowBackpack] = useState(false);
   const [saveExists, setSaveExists] = useState(() => hasSave());
   const [saveInfo, setSaveInfo] = useState(() => loadSave());
   const [showSavedBadge, setShowSavedBadge] = useState(false);
@@ -302,7 +374,7 @@ function GameContent() {
       />
 
       <div
-        className={`relative z-10 w-full max-w-4xl p-4 sm:p-6 ${state.phase === "encounter" ? "pb-28" : ""}`}
+        className="relative z-10 w-full max-w-4xl p-4 sm:p-6"
       >
         <AnimatePresence mode="wait">
           {/* ── TITLE ── */}
@@ -351,7 +423,7 @@ function GameContent() {
                   size="lg"
                   variant={saveExists ? "outline" : "default"}
                   className={`w-full font-serif shadow-[0_0_40px_-10px_hsl(var(--primary))] ${saveExists ? "text-base px-10 py-6 border-primary/40 hover:bg-primary/10" : "text-lg px-12 py-8 bg-primary text-primary-foreground hover:bg-primary/90"}`}
-                  onClick={game.goToMainMenu}
+                  onClick={saveExists ? game.startNewGame : game.goToMainMenu}
                   data-testid="button-begin"
                 >
                   {saveExists ? "New Game" : "Begin Your Quest"}
@@ -933,20 +1005,30 @@ function GameContent() {
         </AnimatePresence>
       </div>
 
-      {/* Hotbar */}
-      <Hotbar
-        inventory={state.inventory}
-        onUse={game.useItem}
-        encounterPhase={state.phase === "encounter"}
-        showOutcome={state.showOutcome}
-      />
-
       {/* Drop notification */}
       <AnimatePresence>
         {state.pendingDrops.length > 0 && !state.showOutcome && (
           <DropNotification
             drops={state.pendingDrops}
             onDismiss={game.dismissDrops}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Backpack button */}
+      <BackpackButton
+        inventory={state.inventory}
+        onClick={() => setShowBackpack(true)}
+      />
+
+      {/* Backpack / Inventory panel */}
+      <AnimatePresence>
+        {showBackpack && (
+          <InventoryPanel
+            inventory={state.inventory}
+            onUse={game.useItem}
+            canUseItems={state.phase === "encounter" && !state.showOutcome}
+            onClose={() => setShowBackpack(false)}
           />
         )}
       </AnimatePresence>

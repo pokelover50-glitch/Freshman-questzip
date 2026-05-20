@@ -45,6 +45,7 @@ export interface GearItemDef {
   isFromBoss: boolean;
   dropChance: number;
   stackable?: boolean;
+  isChest?: boolean;
 }
 
 export interface GearItemInstance {

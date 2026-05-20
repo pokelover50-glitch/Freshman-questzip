@@ -120,8 +120,17 @@ export function useGameEngine() {
   const loadSavedGame = useCallback((): SaveData | null => {
     const saveData = loadSave();
     if (!saveData) return null;
-    setState(saveData.state);
+    let loadedState = saveData.state;
+    if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over") {
+      loadedState = { ...loadedState, phase: "main-menu" };
+    }
+    setState(loadedState);
     return saveData;
+  }, []);
+
+  const startNewGame = useCallback(() => {
+    deleteSave();
+    setState({ ...getInitialState(), phase: "main-menu" });
   }, []);
 
   const clearSave = useCallback(() => {
@@ -448,6 +457,7 @@ export function useGameEngine() {
     goToCharacterSelect,
     selectCharacter,
     startGame,
+    startNewGame,
     chooseAnswer,
     useItem,
     continueAfterOutcome,
