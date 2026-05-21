@@ -112,8 +112,6 @@ function applyClassAbility(
       break;
     }
 
-    case "hidden-ability":
-      break;
   }
 
   return { enemyDamage, playerDamage, healAmount, abilityMessage };

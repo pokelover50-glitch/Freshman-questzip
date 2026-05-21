@@ -61,13 +61,4 @@ export const CHARACTER_CLASSES: CharacterClassDef[] = [
     emoji: "📲",
     ability: "doomscroller",
   },
-  {
-    id: "hidden",
-    name: "???",
-    description: "This class is locked.",
-    maxHp: 0,
-    bonus: "???",
-    emoji: "🔒",
-    ability: "hidden-ability",
-  },
 ];

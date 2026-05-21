@@ -887,15 +887,13 @@ function GameContent() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {CHARACTER_CLASSES.map((cls) => {
-                  const isLocked =
-                    cls.id === "hidden" ||
-                    (cls.id === "doomscroller-freshman" && !state.doomscrollerUnlocked);
+                  const isLocked = cls.id === "doomscroller-freshman" && !state.doomscrollerUnlocked;
                   return (
                     <Card
                       key={cls.id}
                       className={`transition-all duration-300 bg-card/50 backdrop-blur-sm border-border group
                         ${isLocked
-                          ? "opacity-40 cursor-not-allowed select-none"
+                          ? "opacity-50 cursor-not-allowed select-none border-border/40"
                           : "cursor-pointer hover:border-primary hover:shadow-[0_0_20px_-5px_hsl(var(--primary))]"
                         }`}
                       onClick={isLocked ? undefined : () => game.selectCharacter(cls)}
@@ -903,10 +901,10 @@ function GameContent() {
                     >
                       <CardHeader className="text-center pb-2">
                         <div className={`text-6xl mb-4 transition-transform duration-300 ${!isLocked ? "group-hover:scale-110" : ""}`}>
-                          {cls.emoji}
+                          {isLocked ? "🔒" : cls.emoji}
                         </div>
                         <CardTitle className="font-serif text-2xl text-foreground">
-                          {cls.name}
+                          {isLocked ? "???" : cls.name}
                         </CardTitle>
                         {!isLocked && (
                           <Badge
@@ -919,10 +917,10 @@ function GameContent() {
                       </CardHeader>
                       <CardContent className="space-y-4 text-center">
                         <p className="text-sm text-muted-foreground">
-                          {cls.description}
+                          {isLocked ? "Complete a secret achievement to unlock this class." : cls.description}
                         </p>
                         <div className="text-xs font-semibold text-accent p-2 bg-accent/10 rounded-md border border-accent/20 font-serif">
-                          {cls.bonus}
+                          {isLocked ? "???" : cls.bonus}
                         </div>
                       </CardContent>
                     </Card>

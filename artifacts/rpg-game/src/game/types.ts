@@ -4,8 +4,7 @@ export type CharacterClass =
   | "girl-freshman"
   | "barretts-type"
   | "sixty-seven-freshman"
-  | "doomscroller-freshman"
-  | "hidden";
+  | "doomscroller-freshman";
 
 export type CharacterAbility =
   | "heal-per-choice"
@@ -13,8 +12,7 @@ export type CharacterAbility =
   | "negate-damage-chance"
   | "barrett-damage-multiplier"
   | "random-insta-kill"
-  | "doomscroller"
-  | "hidden-ability";
+  | "doomscroller";
 
 export interface CharacterClassDef {
   id: CharacterClass;
