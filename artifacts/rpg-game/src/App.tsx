@@ -25,7 +25,7 @@ const ACHIEVEMENTS = [
   },
   {
     id: "defeat-barrett",
-    title: "Not the Real Barrett",
+    title: "Uneasy Tension",
     description: 'Defeat Barrett Luke Hutchins for the first time. "Something felt off… like this wasn\'t the true threat."',
     goal: 1,
     reward: "🧰 Bronze Chest",
