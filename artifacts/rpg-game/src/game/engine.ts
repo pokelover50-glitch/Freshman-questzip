@@ -184,7 +184,7 @@ export function useGameEngine() {
       doomscrollerUnlocked: saveData.state.doomscrollerUnlocked ?? false,
       crownTaken: saveData.state.crownTaken ?? false,
     };
-    if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over" || loadedState.phase === "raid-complete") {
+    if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over" || loadedState.phase === "raid-complete" || loadedState.phase === "ck3-cutscene") {
       loadedState = { ...loadedState, phase: "main-menu" };
     }
     setActiveSlot(slot);
@@ -201,6 +201,26 @@ export function useGameEngine() {
   const clearSave = useCallback(() => {
     deleteSlotSave(activeSlot);
   }, [activeSlot]);
+
+  const dismissCK3Cutscene = useCallback(() => {
+    setState((s) => {
+      const raidEncs = RAID_ENCOUNTERS[s.activeRaidId ?? ""] ?? null;
+      if (!raidEncs) return s;
+      const barrettIdx = raidEncs.findIndex((e) => e.id === "raid-boss-ck3-barrett");
+      const barrett = raidEncs[barrettIdx];
+      return {
+        ...s,
+        phase: "encounter",
+        encounterIndex: barrettIdx,
+        roundIndex: 0,
+        enemyHp: barrett.enemyMaxHp,
+        showOutcome: false,
+        lastOutcome: null,
+        abilityMessage: null,
+        pendingDrops: [],
+      };
+    });
+  }, []);
 
   const currentEncounter =
     state.phase === "encounter"
@@ -601,20 +621,16 @@ export function useGameEngine() {
         };
       }
 
-      // ── Bryant → Barrett mid-fight: Barrett spawns when Bryant hits ≤50% HP ──
+      // ── Bryant → CK3 Barrett mid-fight: show cutscene first when Bryant hits ≤50% HP ──
       if (
         s.activeRaidId === "bryant" &&
         currentEncounter.id === "raid-boss-bryant" &&
         s.enemyHp <= currentEncounter.enemyMaxHp / 2 &&
         raidEncounters
       ) {
-        const barrettIdx = raidEncounters.findIndex((e) => e.id === "raid-boss-ck3-barrett");
-        const barrett = raidEncounters[barrettIdx];
         return {
           ...s,
-          encounterIndex: barrettIdx,
-          roundIndex: 0,
-          enemyHp: barrett.enemyMaxHp,
+          phase: "ck3-cutscene",
           showOutcome: false,
           lastOutcome: null,
           abilityMessage: null,
@@ -760,6 +776,7 @@ export function useGameEngine() {
     claimAchievement,
     loadSavedGame,
     clearSave,
+    dismissCK3Cutscene,
     lastSavedAt,
     ZONES,
   };

@@ -85,7 +85,8 @@ export type GamePhase =
   | "encounter"
   | "victory"
   | "raid-complete"
-  | "game-over";
+  | "game-over"
+  | "ck3-cutscene";
 
 export interface GameState {
   phase: GamePhase;

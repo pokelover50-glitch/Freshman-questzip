@@ -1548,6 +1548,63 @@ function GameContent() {
             </motion.div>
           )}
 
+          {/* ── CK3 BARRETT CUTSCENE ── */}
+          {state.phase === "ck3-cutscene" && (
+            <motion.div
+              key="ck3-cutscene"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col items-center justify-center text-center space-y-0 py-8 min-h-[70vh]"
+            >
+              {/* Cinematic lines */}
+              <div className="w-full max-w-2xl space-y-6">
+                {[
+                  { delay: 0.3,  type: "narration", text: "Bryant staggers backward, gasping. You can feel the shift — he's broken." },
+                  { delay: 1.4,  type: "narration", text: "Then the back door swings open." },
+                  { delay: 2.6,  type: "narration", text: "The room goes silent." },
+                  { delay: 3.8,  type: "narration", text: "CK3 Barrett steps through. No hurry. No anger. Just inevitability." },
+                  { delay: 5.2,  type: "dialogue",  text: "\"You freed Hayes. You freed Cronin.\"" },
+                  { delay: 6.6,  type: "dialogue",  text: "\"Impressive. Truly.\"" },
+                  { delay: 8.0,  type: "dialogue",  text: "\"But Bryant stays. This room is mine.\"" },
+                  { delay: 9.4,  type: "dialogue",  text: "\"Every hallway. Every teacher. Every freshman who thought they had a chance.\"" },
+                  { delay: 10.8, type: "dialogue",  text: "\"This school is mine. And I don't lose.\"" },
+                ].map((line, i) => (
+                  <motion.p
+                    key={i}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: line.delay, duration: 0.7, ease: "easeOut" }}
+                    className={
+                      line.type === "dialogue"
+                        ? "text-xl sm:text-2xl font-serif italic text-primary leading-relaxed"
+                        : "text-base sm:text-lg font-serif text-muted-foreground leading-relaxed"
+                    }
+                  >
+                    {line.text}
+                  </motion.p>
+                ))}
+
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 12.4, duration: 0.6, ease: "easeOut" }}
+                  className="pt-6"
+                >
+                  <Button
+                    size="lg"
+                    className="text-lg px-12 py-7 font-serif bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_40px_-10px_hsl(var(--primary))]"
+                    onClick={game.dismissCK3Cutscene}
+                    data-testid="button-fight-ck3"
+                  >
+                    Face Barrett
+                  </Button>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+
           {/* ── RAID COMPLETE ── */}
           {state.phase === "raid-complete" && (
             <motion.div
