@@ -1604,10 +1604,10 @@ function GameContent() {
                 size="lg"
                 variant="outline"
                 className="text-lg px-12 py-6 font-serif border-primary/50 hover:bg-primary/10"
-                onClick={game.goToTitle}
+                onClick={game.goToMainMenu}
                 data-testid="button-play-again"
               >
-                Return to the Title
+                Continue Your Journey
               </Button>
             </motion.div>
           )}
