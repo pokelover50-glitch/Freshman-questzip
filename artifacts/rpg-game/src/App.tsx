@@ -11,7 +11,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { GearItemDef, GearItemInstance } from "./game/types";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { loadSave, hasSave, formatSaveDate } from "./game/saveLoad";
+import { getAllSlotSaves, deleteSlotSave, formatSaveDate, migrateLegacySave, type SaveSlot } from "./game/saveLoad";
 import { ZONE_NAMES_SHORT } from "./game/encounters";
 import { CHEST_LOOT_POOLS, rollChestDrop } from "./game/gear";
 
@@ -666,9 +666,10 @@ function GameContent() {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showBackpack, setShowBackpack] = useState(false);
   const [spinnerChest, setSpinnerChest] = useState<GearItemInstance | null>(null);
-  const [saveExists, setSaveExists] = useState(() => hasSave());
-  const [saveInfo, setSaveInfo] = useState(() => loadSave());
+  const [slotSaves, setSlotSaves] = useState(() => { migrateLegacySave(); return getAllSlotSaves(); });
   const [showSavedBadge, setShowSavedBadge] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<SaveSlot | null>(null);
+  const [newGameConfirm, setNewGameConfirm] = useState<SaveSlot | null>(null);
 
   // Pick 4 random choices from the pool each round — cycles through all options over time
   const shuffledChoices = useMemo(() => {
@@ -683,10 +684,9 @@ function GameContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRound]);
 
-  // Refresh save existence when game state changes
+  // Refresh slot saves when game state changes
   useEffect(() => {
-    setSaveExists(hasSave());
-    setSaveInfo(loadSave());
+    setSlotSaves(getAllSlotSaves());
   }, [game.lastSavedAt]);
 
   // Flash "saved" badge briefly after each auto-save
@@ -721,7 +721,7 @@ function GameContent() {
               initial="initial"
               animate="animate"
               exit="exit"
-              className="flex flex-col items-center justify-center text-center space-y-8 py-20"
+              className="flex flex-col items-center justify-center text-center space-y-8 py-12"
             >
               <div className="space-y-4">
                 <h1 className="text-6xl sm:text-7xl lg:text-8xl font-serif font-bold text-primary tracking-tight drop-shadow-lg">
@@ -733,38 +733,131 @@ function GameContent() {
                   Survive the halls. Defeat the legends. Become the myth.
                 </p>
               </div>
-              <div className="flex flex-col items-center gap-4 w-full max-w-xs">
-                {saveExists && saveInfo && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="w-full"
-                  >
-                    <Button
-                      size="lg"
-                      className="w-full text-lg px-12 py-8 bg-primary text-primary-foreground hover:bg-primary/90 font-serif shadow-[0_0_40px_-10px_hsl(var(--primary))]"
-                      onClick={() => game.loadSavedGame()}
-                      data-testid="button-continue"
+
+              {/* Save Slot Cards */}
+              <div className="w-full max-w-md space-y-3">
+                <p className="text-sm font-serif text-muted-foreground/60 uppercase tracking-widest">Select a Save Slot</p>
+                {([1, 2, 3] as SaveSlot[]).map((slot) => {
+                  const save = slotSaves[slot - 1];
+                  return (
+                    <motion.div
+                      key={slot}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: (slot - 1) * 0.07 }}
+                      className="flex items-stretch gap-2"
                     >
-                      Continue Quest
-                    </Button>
-                    <p className="mt-1.5 text-xs text-muted-foreground/60 font-serif text-center">
-                      {ZONE_NAMES_SHORT[saveInfo.zoneIndex] ?? "Zone " + (saveInfo.zoneIndex + 1)}
-                      {" · "}Encounter {saveInfo.encounterIndex + 1}
-                      {" · "}Saved {formatSaveDate(saveInfo.savedAt)}
-                    </p>
+                      <button
+                        className={`flex-1 text-left rounded-xl border px-5 py-4 transition-all font-serif group ${
+                          save
+                            ? "border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/70 cursor-pointer"
+                            : "border-border/40 bg-card/40 hover:bg-card hover:border-border cursor-pointer"
+                        }`}
+                        onClick={() => {
+                          if (save) {
+                            game.loadSavedGame(slot);
+                          } else {
+                            game.startNewGame(slot);
+                          }
+                        }}
+                        data-testid={`button-slot-${slot}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground/50 uppercase tracking-widest font-serif">
+                            Slot {slot}
+                          </span>
+                          {save && (
+                            <span className="text-xs text-primary/70 font-serif group-hover:text-primary transition-colors">
+                              Continue →
+                            </span>
+                          )}
+                          {!save && (
+                            <span className="text-xs text-muted-foreground/40 font-serif group-hover:text-muted-foreground/70 transition-colors">
+                              New Game →
+                            </span>
+                          )}
+                        </div>
+                        {save ? (
+                          <div className="mt-1">
+                            <p className="text-base text-foreground font-semibold font-serif">
+                              {ZONE_NAMES_SHORT[save.zoneIndex] ?? "Zone " + (save.zoneIndex + 1)}
+                              {" · "}Encounter {save.encounterIndex + 1}
+                            </p>
+                            <p className="text-xs text-muted-foreground/50 mt-0.5">
+                              Saved {formatSaveDate(save.savedAt)}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-sm text-muted-foreground/40 italic">Empty</p>
+                        )}
+                      </button>
+
+                      {/* Delete button — only shown for occupied slots */}
+                      {save && (
+                        <button
+                          className="flex items-center justify-center w-11 rounded-xl border border-border/40 bg-card/40 hover:bg-red-500/10 hover:border-red-500/40 text-muted-foreground/40 hover:text-red-400 transition-all"
+                          onClick={() => setDeleteConfirm(slot)}
+                          title="Delete save"
+                          data-testid={`button-delete-slot-${slot}`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            <path d="M10 11v6M14 11v6" />
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                          </svg>
+                        </button>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Delete Confirmation Dialog */}
+              <AnimatePresence>
+                {deleteConfirm !== null && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                    onClick={() => setDeleteConfirm(null)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.92, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.92, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                      className="bg-card border border-border rounded-2xl shadow-2xl p-6 max-w-sm w-full text-left"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <h3 className="text-xl font-serif font-bold text-foreground">Delete Save Slot {deleteConfirm}?</h3>
+                      <p className="mt-2 text-sm text-muted-foreground font-serif leading-relaxed">
+                        This will <span className="text-red-400 font-semibold">permanently delete</span> all progress in Slot {deleteConfirm}. Your other saves will not be affected. This cannot be undone.
+                      </p>
+                      <div className="mt-5 flex gap-3">
+                        <Button
+                          variant="outline"
+                          className="flex-1 font-serif border-border/60"
+                          onClick={() => setDeleteConfirm(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          className="flex-1 font-serif bg-red-600 hover:bg-red-700 text-white border-0"
+                          onClick={() => {
+                            deleteSlotSave(deleteConfirm!);
+                            setSlotSaves(getAllSlotSaves());
+                            setDeleteConfirm(null);
+                          }}
+                        >
+                          Delete Save
+                        </Button>
+                      </div>
+                    </motion.div>
                   </motion.div>
                 )}
-                <Button
-                  size="lg"
-                  variant={saveExists ? "outline" : "default"}
-                  className={`w-full font-serif shadow-[0_0_40px_-10px_hsl(var(--primary))] ${saveExists ? "text-base px-10 py-6 border-primary/40 hover:bg-primary/10" : "text-lg px-12 py-8 bg-primary text-primary-foreground hover:bg-primary/90"}`}
-                  onClick={saveExists ? game.startNewGame : game.goToMainMenu}
-                  data-testid="button-begin"
-                >
-                  {saveExists ? "New Game" : "Begin Your Quest"}
-                </Button>
-              </div>
+              </AnimatePresence>
             </motion.div>
           )}
 

@@ -3,7 +3,7 @@ import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItem
 import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS } from "./encounters";
 import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS } from "./gear";
 
-import { saveGame, loadSave, deleteSave, type SaveData } from "./saveLoad";
+import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, type SaveData, type SaveSlot } from "./saveLoad";
 
 const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
   "defeat-10-mobs": () => ({
@@ -121,6 +121,12 @@ function applyClassAbility(
 export function useGameEngine() {
   const [state, setState] = useState<GameState>(getInitialState());
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [activeSlot, setActiveSlot] = useState<SaveSlot>(1);
+
+  // Migrate any legacy single-save data to slot 1 on first load
+  useEffect(() => {
+    migrateLegacySave();
+  }, []);
 
   // Normalize any fields that may be missing from stale/pre-migration state
   useEffect(() => {
@@ -143,18 +149,18 @@ export function useGameEngine() {
   useEffect(() => {
     if (state.phase === "encounter" && !state.showOutcome) {
       const clean: GameState = { ...state, pendingDrops: [], showOutcome: false, lastOutcome: null, abilityMessage: null, itemActionMessage: null };
-      saveGame(clean);
+      saveGameToSlot(activeSlot, clean);
       setLastSavedAt(Date.now());
     } else if (state.phase === "victory" || state.phase === "raid-complete") {
       const clean: GameState = { ...state, pendingDrops: [], showOutcome: false, lastOutcome: null, abilityMessage: null, itemActionMessage: null };
-      saveGame(clean);
+      saveGameToSlot(activeSlot, clean);
       setLastSavedAt(Date.now());
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.zoneIndex, state.encounterIndex, state.phase]);
+  }, [state.zoneIndex, state.encounterIndex, state.phase, activeSlot]);
 
-  const loadSavedGame = useCallback((): SaveData | null => {
-    const saveData = loadSave();
+  const loadSavedGame = useCallback((slot: SaveSlot): SaveData | null => {
+    const saveData = loadSaveFromSlot(slot);
     if (!saveData) return null;
     let loadedState: GameState = {
       ...saveData.state,
@@ -173,18 +179,20 @@ export function useGameEngine() {
     if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over" || loadedState.phase === "raid-complete") {
       loadedState = { ...loadedState, phase: "main-menu" };
     }
+    setActiveSlot(slot);
     setState(loadedState);
     return saveData;
   }, []);
 
-  const startNewGame = useCallback(() => {
-    deleteSave();
+  const startNewGame = useCallback((slot: SaveSlot) => {
+    deleteSlotSave(slot);
+    setActiveSlot(slot);
     setState({ ...getInitialState(), phase: "main-menu" });
   }, []);
 
   const clearSave = useCallback(() => {
-    deleteSave();
-  }, []);
+    deleteSlotSave(activeSlot);
+  }, [activeSlot]);
 
   const currentEncounter =
     state.phase === "encounter"
@@ -718,6 +726,7 @@ export function useGameEngine() {
     state,
     currentEncounter,
     currentRound,
+    activeSlot,
     goToTitle,
     goToMainMenu,
     goToRaidSelect,
