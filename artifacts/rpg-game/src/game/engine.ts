@@ -674,7 +674,7 @@ export function useGameEngine() {
       const chestIdx = s.inventory.findIndex((i) => i.instanceId === instanceId);
       if (chestIdx === -1) return s;
 
-      const alreadyHas = s.inventory.some((i) => i.def.id === wonItemDef.id && i.def.isWeapon);
+      const alreadyHas = s.inventory.some((i) => i.def.id === wonItemDef.id && (i.def.isWeapon || i.def.isArmor));
       const newItem: GearItemInstance = {
         instanceId: `${wonItemDef.id}-${Math.random().toString(36).slice(2, 9)}`,
         def: wonItemDef,
