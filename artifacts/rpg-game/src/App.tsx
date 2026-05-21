@@ -155,6 +155,11 @@ function AchievementsPanel({
 }
 
 const ZONE_NAMES = ["The Hallways", "The Cafeteria", "The Senior Lounge"];
+const RAID_NAMES: Record<string, string> = {
+  "hayes": "Mr. Hayes's Room",
+  "cronin": "Mr. Cronin's Room",
+  "bryant": "Mr. Bryant's Room",
+};
 
 const pageVariants = {
   initial: { opacity: 0, scale: 0.98 },
@@ -1264,7 +1269,7 @@ function GameContent() {
                   )}
                   <div className="col-span-2 flex items-center justify-center gap-3">
                     <span className="text-xs font-serif tracking-widest text-primary/70 uppercase">
-                      {ZONE_NAMES[state.zoneIndex]} — Encounter{" "}
+                      {state.activeRaidId ? (RAID_NAMES[state.activeRaidId] ?? "Raid") : ZONE_NAMES[state.zoneIndex]} — Encounter{" "}
                       {state.encounterIndex + 1}
                     </span>
                     <AnimatePresence>
@@ -1579,7 +1584,7 @@ function GameContent() {
                   {currentEncounter?.defeatText ?? "Your journey ends here."}
                 </p>
                 <div className="inline-block mt-4 px-6 py-2 rounded-full bg-destructive/10 border border-destructive/20 text-destructive font-serif">
-                  Fell in {ZONE_NAMES[state.zoneIndex]} to{" "}
+                  Fell in {state.activeRaidId ? (RAID_NAMES[state.activeRaidId] ?? "a Raid") : ZONE_NAMES[state.zoneIndex]} to{" "}
                   {state.defeatedByName ?? "an unknown enemy"}
                 </div>
               </div>
