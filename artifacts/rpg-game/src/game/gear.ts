@@ -287,7 +287,7 @@ function weightedPick(items: GearItemDef[]): GearItemDef | null {
   return null;
 }
 
-export function rollMobDrops(encounterId?: string): GearItemInstance[] {
+export function rollMobDrops(encounterId?: string, alwaysDropFood = false): GearItemInstance[] {
   const drops: GearItemInstance[] = [];
 
   const roll = Math.random() * 100;
@@ -295,7 +295,7 @@ export function rollMobDrops(encounterId?: string): GearItemInstance[] {
   else if (roll < 66) drops.push(makeInstance(MOB_ITEMS[1]));
   else if (roll < 99) drops.push(makeInstance(MOB_ITEMS[2]));
 
-  if (encounterId && FOOD_DROP_MOB_IDS.has(encounterId)) {
+  if (alwaysDropFood || (encounterId && FOOD_DROP_MOB_IDS.has(encounterId))) {
     const food = weightedPick(FOOD_ITEMS);
     if (food) drops.push(makeInstance(food));
   }
@@ -310,4 +310,14 @@ export function rollBossDrops(): GearItemInstance[] {
   else if (roll < 90) chest = CHEST_ITEMS[1];
   else chest = CHEST_ITEMS[2];
   return [makeInstance(chest)];
+}
+
+export function rollRaidBossDrops(): GearItemInstance[] {
+  const chest = Math.random() < 0.65 ? CHEST_ITEMS[1] : CHEST_ITEMS[2];
+  return [makeInstance(chest)];
+}
+
+export function rollDoomscrollerChest(): GearItemInstance {
+  const chest = Math.random() < 0.7 ? CHEST_ITEMS[1] : CHEST_ITEMS[2];
+  return makeInstance(chest);
 }

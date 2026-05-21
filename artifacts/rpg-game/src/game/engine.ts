@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItemInstance } from "./types";
-import { ZONES, ACHIEVEMENT_MOB_IDS } from "./encounters";
-import { rollMobDrops, rollBossDrops, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop } from "./gear";
+import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS } from "./encounters";
+import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop } from "./gear";
 
 import { saveGame, loadSave, deleteSave, type SaveData } from "./saveLoad";
 
@@ -14,10 +14,14 @@ const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
     instanceId: `bronze-chest-claim-${Math.random().toString(36).slice(2, 9)}`,
     def: CHEST_ITEMS.find((c) => c.id === "bronze-chest")!,
   }),
+  "free-hayes": () => ({
+    instanceId: `silver-chest-claim-${Math.random().toString(36).slice(2, 9)}`,
+    def: CHEST_ITEMS.find((c) => c.id === "silver-chest")!,
+  }),
 };
 
 function getInitialState(
-  preserve?: Pick<GameState, "barrettDefeated" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements">
+  preserve?: Pick<GameState, "barrettDefeated" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked">
 ): GameState {
   return {
     phase: "title",
@@ -42,6 +46,8 @@ function getInitialState(
     unclaimedAchievements: preserve?.unclaimedAchievements ?? [],
     equippedItemId: null,
     defeatedByName: null,
+    activeRaidId: null,
+    doomscrollerUnlocked: preserve?.doomscrollerUnlocked ?? false,
   };
 }
 
@@ -100,6 +106,12 @@ function applyClassAbility(
       }
       break;
 
+    case "doomscroller": {
+      enemyDamage = Math.round(baseEnemyDamage * 1.1);
+      if (baseEnemyDamage > 0) abilityMessage = `Doomscroller focus: damage x1.1 (${enemyDamage})!`;
+      break;
+    }
+
     case "hidden-ability":
       break;
   }
@@ -122,16 +134,19 @@ export function useGameEngine() {
       defeatedBosses: s.defeatedBosses ?? [],
       completedRaids: s.completedRaids ?? [],
       equippedItemId: s.equippedItemId ?? null,
+      defeatedByName: s.defeatedByName ?? null,
+      activeRaidId: s.activeRaidId ?? null,
+      doomscrollerUnlocked: s.doomscrollerUnlocked ?? false,
     }));
   }, []);
 
-  // Auto-save when a fresh encounter begins or on victory
+  // Auto-save when a fresh encounter begins or on victory/raid-complete
   useEffect(() => {
     if (state.phase === "encounter" && !state.showOutcome) {
       const clean: GameState = { ...state, pendingDrops: [], showOutcome: false, lastOutcome: null, abilityMessage: null, itemActionMessage: null };
       saveGame(clean);
       setLastSavedAt(Date.now());
-    } else if (state.phase === "victory") {
+    } else if (state.phase === "victory" || state.phase === "raid-complete") {
       const clean: GameState = { ...state, pendingDrops: [], showOutcome: false, lastOutcome: null, abilityMessage: null, itemActionMessage: null };
       saveGame(clean);
       setLastSavedAt(Date.now());
@@ -144,7 +159,6 @@ export function useGameEngine() {
     if (!saveData) return null;
     let loadedState: GameState = {
       ...saveData.state,
-      // Normalize fields that may be missing in older saves
       unclaimedAchievements: saveData.state.unclaimedAchievements ?? [],
       achievements: saveData.state.achievements ?? [],
       completedRaids: saveData.state.completedRaids ?? [],
@@ -152,8 +166,11 @@ export function useGameEngine() {
       pendingDrops: saveData.state.pendingDrops ?? [],
       defeatedBosses: saveData.state.defeatedBosses ?? [],
       equippedItemId: saveData.state.equippedItemId ?? null,
+      defeatedByName: saveData.state.defeatedByName ?? null,
+      activeRaidId: saveData.state.activeRaidId ?? null,
+      doomscrollerUnlocked: saveData.state.doomscrollerUnlocked ?? false,
     };
-    if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over") {
+    if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over" || loadedState.phase === "raid-complete") {
       loadedState = { ...loadedState, phase: "main-menu" };
     }
     setState(loadedState);
@@ -171,7 +188,9 @@ export function useGameEngine() {
 
   const currentEncounter =
     state.phase === "encounter"
-      ? ZONES[state.zoneIndex]?.[state.encounterIndex] ?? null
+      ? (state.activeRaidId
+          ? RAID_ENCOUNTERS[state.activeRaidId]?.[state.encounterIndex] ?? null
+          : ZONES[state.zoneIndex]?.[state.encounterIndex] ?? null)
       : null;
 
   const currentRound =
@@ -184,19 +203,24 @@ export function useGameEngine() {
       mobsDefeated: s.mobsDefeated,
       achievements: s.achievements,
       unclaimedAchievements: s.unclaimedAchievements,
+      doomscrollerUnlocked: s.doomscrollerUnlocked,
     }));
   }, []);
 
   const goToMainMenu = useCallback(() => {
-    setState((s) => ({ ...s, phase: "main-menu" }));
+    setState((s) => ({ ...s, phase: "main-menu", activeRaidId: null }));
   }, []);
 
   const goToRaidSelect = useCallback(() => {
-    setState((s) => ({ ...s, phase: "raid-select" }));
+    setState((s) => ({ ...s, phase: "raid-select", activeRaidId: null }));
   }, []);
 
   const goToCharacterSelect = useCallback(() => {
     setState((s) => ({ ...s, phase: "character-select" }));
+  }, []);
+
+  const beginRaid = useCallback((raidId: string) => {
+    setState((s) => ({ ...s, activeRaidId: raidId, phase: "character-select" }));
   }, []);
 
   const selectCharacter = useCallback((cls: CharacterClassDef) => {
@@ -226,6 +250,29 @@ export function useGameEngine() {
         defeatedBosses: [],
         abilityMessage: null,
         itemActionMessage: null,
+        activeRaidId: null,
+      };
+    });
+  }, []);
+
+  const startRaid = useCallback(() => {
+    setState((s) => {
+      if (!s.activeRaidId) return s;
+      const encounters = RAID_ENCOUNTERS[s.activeRaidId];
+      if (!encounters || encounters.length === 0) return s;
+      return {
+        ...s,
+        phase: "encounter",
+        encounterIndex: 0,
+        roundIndex: 0,
+        enemyHp: encounters[0].enemyMaxHp,
+        lastOutcome: null,
+        showOutcome: false,
+        inventory: [],
+        pendingDrops: [],
+        defeatedBosses: [],
+        abilityMessage: null,
+        itemActionMessage: null,
       };
     });
   }, []);
@@ -234,8 +281,8 @@ export function useGameEngine() {
     setState((s) => {
       if (!currentEncounter || !s.selectedClass) return s;
 
-      // Scale player's attack damage by zone (1.1x per zone, base at zone 0)
-      const zoneMultiplier = Math.pow(1.1, s.zoneIndex);
+      // Scale player's attack damage by zone (1.1x per zone, base at zone 0) — raids use zone 0 scale
+      const zoneMultiplier = s.activeRaidId ? 1 : Math.pow(1.1, s.zoneIndex);
       const scaledEnemyDamage = Math.round(choice.enemyDamage * zoneMultiplier);
 
       const { enemyDamage, playerDamage, healAmount, abilityMessage } =
@@ -248,7 +295,7 @@ export function useGameEngine() {
           currentEncounter.id,
         );
 
-      // Add equipped weapon bonus — not doubled by Bulking class
+      // Add equipped weapon bonus — not multiplied by class abilities
       const equippedWeapon = CHEST_WEAPON_ITEMS.find((w) => w.id === s.equippedItemId);
       let weaponBonus = 0;
       if (equippedWeapon) {
@@ -342,30 +389,30 @@ export function useGameEngine() {
           lastOutcome: fakeOutcome,
           showOutcome: true,
           abilityMessage: null,
-          itemActionMessage: null,
         };
       }
 
-      const damageDealt = Math.min(def.damage, s.enemyHp);
-      const newEnemyHp = Math.max(0, s.enemyHp - def.damage);
+      if (def.damage > 0) {
+        const dmgDealt = Math.min(def.damage, s.enemyHp);
+        const newEnemyHp = Math.max(0, s.enemyHp - def.damage);
+        const fakeOutcome: ChoiceOutcome = {
+          text: `Used ${def.name}`,
+          playerDamage: 0,
+          enemyDamage: dmgDealt,
+          healAmount: 0,
+          narrative: `You threw the ${def.name} at the enemy, dealing ${dmgDealt} damage!`,
+        };
+        return {
+          ...s,
+          enemyHp: newEnemyHp,
+          inventory: newInventory,
+          lastOutcome: fakeOutcome,
+          showOutcome: true,
+          abilityMessage: null,
+        };
+      }
 
-      const fakeOutcome: ChoiceOutcome = {
-        text: `Used ${def.name}`,
-        playerDamage: 0,
-        enemyDamage: damageDealt,
-        healAmount: 0,
-        narrative: `You unleashed ${def.name}! ${def.description}`,
-      };
-
-      return {
-        ...s,
-        enemyHp: newEnemyHp,
-        inventory: newInventory,
-        lastOutcome: fakeOutcome,
-        showOutcome: true,
-        abilityMessage: null,
-        itemActionMessage: null,
-      };
+      return { ...s, inventory: newInventory, itemActionMessage: `Used ${def.name}.` };
     });
   }, [currentEncounter]);
 
@@ -375,15 +422,27 @@ export function useGameEngine() {
 
       const playerDied = s.playerHp <= 0;
       const enemyDied = s.enemyHp <= 0;
+      const isRaid = !!s.activeRaidId;
+      const raidEncounters = isRaid ? RAID_ENCOUNTERS[s.activeRaidId!] : null;
 
       if (playerDied) {
         return { ...s, phase: "game-over", showOutcome: false, pendingDrops: [], defeatedByName: currentEncounter.enemyName };
       }
 
       if (enemyDied) {
-        const rawDrops: GearItemInstance[] = currentEncounter.isBoss
-          ? rollBossDrops()
-          : rollMobDrops(currentEncounter.id);
+        // Calculate drops
+        let rawDrops: GearItemInstance[];
+        if (currentEncounter.isBoss) {
+          rawDrops = isRaid ? rollRaidBossDrops() : rollBossDrops();
+        } else {
+          rawDrops = rollMobDrops(currentEncounter.id, isRaid);
+        }
+
+        // Doomscroller 15% chest bonus on any kill
+        if (s.selectedClass?.ability === "doomscroller" && Math.random() < 0.15) {
+          rawDrops = [...rawDrops, rollDoomscrollerChest()];
+        }
+
         const existingNonStackableIds = new Set(
           s.inventory.filter((i) => !i.def.stackable).map((i) => i.def.id)
         );
@@ -391,25 +450,74 @@ export function useGameEngine() {
           (d) => d.def.stackable || !existingNonStackableIds.has(d.def.id)
         );
 
-        const isLastInZone = s.encounterIndex >= ZONES[s.zoneIndex].length - 1;
-        const isLastZone = s.zoneIndex >= ZONES.length - 1;
+        // Achievement tracking
+        let newUnclaimedAchievements = [...s.unclaimedAchievements];
+
+        // free-hayes achievement
+        if (currentEncounter.id === "raid-boss-hayes") {
+          const alreadyEarned = s.achievements.includes("free-hayes") || s.unclaimedAchievements.includes("free-hayes");
+          if (!alreadyEarned) newUnclaimedAchievements = [...newUnclaimedAchievements, "free-hayes"];
+        }
+
+        // matteo-phone secret achievement
+        if (currentEncounter.id === "raid-mob-matteo" && s.equippedItemId === "matteos-phone") {
+          const alreadyEarned = s.achievements.includes("matteo-phone") || s.unclaimedAchievements.includes("matteo-phone");
+          if (!alreadyEarned) newUnclaimedAchievements = [...newUnclaimedAchievements, "matteo-phone"];
+        }
+
+        const isMobKill = !currentEncounter.isBoss && ACHIEVEMENT_MOB_IDS.has(currentEncounter.id);
+        const newMobsDefeated = isMobKill ? s.mobsDefeated + 1 : s.mobsDefeated;
+        const alreadyEarned10Mobs = s.achievements.includes("defeat-10-mobs") || s.unclaimedAchievements.includes("defeat-10-mobs");
+        if (!alreadyEarned10Mobs && newMobsDefeated >= 10) {
+          newUnclaimedAchievements = [...newUnclaimedAchievements, "defeat-10-mobs"];
+        }
 
         const newDefeatedBosses = currentEncounter.isBoss
           ? [...s.defeatedBosses, currentEncounter.enemyName]
           : s.defeatedBosses;
 
-        const isMobKill = !currentEncounter.isBoss && ACHIEVEMENT_MOB_IDS.has(currentEncounter.id);
-        const newMobsDefeated = isMobKill ? s.mobsDefeated + 1 : s.mobsDefeated;
-        const alreadyEarned10Mobs =
-          s.achievements.includes("defeat-10-mobs") ||
-          s.unclaimedAchievements.includes("defeat-10-mobs");
-        const achievementJustEarned = !alreadyEarned10Mobs && newMobsDefeated >= 10;
-        const newUnclaimedAchievements = achievementJustEarned
-          ? [...s.unclaimedAchievements, "defeat-10-mobs"]
-          : s.unclaimedAchievements;
+        const newInventory = [...s.inventory, ...drops];
 
-        const allDrops = drops;
-        const newInventory = [...s.inventory, ...allDrops];
+        // ── RAID path ───────────────────────────────────────────────────────
+        if (isRaid && raidEncounters) {
+          const isLastInRaid = s.encounterIndex >= raidEncounters.length - 1;
+
+          if (isLastInRaid) {
+            return {
+              ...s,
+              phase: "raid-complete",
+              showOutcome: false,
+              inventory: newInventory,
+              pendingDrops: drops,
+              defeatedBosses: newDefeatedBosses,
+              completedRaids: [...s.completedRaids, s.activeRaidId!],
+              mobsDefeated: newMobsDefeated,
+              unclaimedAchievements: newUnclaimedAchievements,
+            };
+          }
+
+          const newEncounterIndex = s.encounterIndex + 1;
+          const newEncounter = raidEncounters[newEncounterIndex];
+          return {
+            ...s,
+            phase: "encounter",
+            encounterIndex: newEncounterIndex,
+            roundIndex: 0,
+            enemyHp: newEncounter.enemyMaxHp,
+            showOutcome: false,
+            lastOutcome: null,
+            inventory: newInventory,
+            pendingDrops: drops,
+            abilityMessage: null,
+            defeatedBosses: newDefeatedBosses,
+            mobsDefeated: newMobsDefeated,
+            unclaimedAchievements: newUnclaimedAchievements,
+          };
+        }
+
+        // ── Normal campaign path ─────────────────────────────────────────────
+        const isLastInZone = s.encounterIndex >= ZONES[s.zoneIndex].length - 1;
+        const isLastZone = s.zoneIndex >= ZONES.length - 1;
 
         if (isLastZone && isLastInZone) {
           const alreadyEarnedBarrett =
@@ -423,7 +531,7 @@ export function useGameEngine() {
             phase: "victory",
             showOutcome: false,
             inventory: newInventory,
-            pendingDrops: allDrops,
+            pendingDrops: drops,
             defeatedBosses: newDefeatedBosses,
             barrettDefeated: true,
             mobsDefeated: newMobsDefeated,
@@ -445,7 +553,7 @@ export function useGameEngine() {
             showOutcome: false,
             lastOutcome: null,
             inventory: newInventory,
-            pendingDrops: allDrops,
+            pendingDrops: drops,
             abilityMessage: null,
             mobsDefeated: newMobsDefeated,
             unclaimedAchievements: newUnclaimedAchievements,
@@ -463,10 +571,31 @@ export function useGameEngine() {
           showOutcome: false,
           lastOutcome: null,
           inventory: newInventory,
-          pendingDrops: allDrops,
+          pendingDrops: drops,
           abilityMessage: null,
           mobsDefeated: newMobsDefeated,
           unclaimedAchievements: newUnclaimedAchievements,
+        };
+      }
+
+      // ── Bryant → Barrett mid-fight: Barrett spawns when Bryant hits ≤50% HP ──
+      if (
+        s.activeRaidId === "bryant" &&
+        currentEncounter.id === "raid-boss-bryant" &&
+        s.enemyHp <= currentEncounter.enemyMaxHp / 2 &&
+        raidEncounters
+      ) {
+        const barrettIdx = raidEncounters.findIndex((e) => e.id === "raid-boss-ck3-barrett");
+        const barrett = raidEncounters[barrettIdx];
+        return {
+          ...s,
+          encounterIndex: barrettIdx,
+          roundIndex: 0,
+          enemyHp: barrett.enemyMaxHp,
+          showOutcome: false,
+          lastOutcome: null,
+          abilityMessage: null,
+          pendingDrops: [],
         };
       }
 
@@ -533,15 +662,21 @@ export function useGameEngine() {
   const claimAchievement = useCallback((id: string) => {
     setState((s) => {
       if (!s.unclaimedAchievements.includes(id)) return s;
-      const rewardFn = ACHIEVEMENT_REWARDS[id];
-      if (!rewardFn) return s;
-      const rewardItem = rewardFn();
-      return {
+      const newBase = {
         ...s,
         achievements: [...s.achievements, id],
         unclaimedAchievements: s.unclaimedAchievements.filter((a) => a !== id),
-        inventory: [...s.inventory, rewardItem],
       };
+      // matteo-phone unlocks the Doomscroller class (no item reward)
+      if (id === "matteo-phone") {
+        return { ...newBase, doomscrollerUnlocked: true };
+      }
+      const rewardFn = ACHIEVEMENT_REWARDS[id];
+      if (rewardFn) {
+        const rewardItem = rewardFn();
+        return { ...newBase, inventory: [...s.inventory, rewardItem] };
+      }
+      return newBase;
     });
   }, []);
 
@@ -553,8 +688,10 @@ export function useGameEngine() {
     goToMainMenu,
     goToRaidSelect,
     goToCharacterSelect,
+    beginRaid,
     selectCharacter,
     startGame,
+    startRaid,
     startNewGame,
     chooseAnswer,
     useItem,

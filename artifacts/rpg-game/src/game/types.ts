@@ -4,6 +4,7 @@ export type CharacterClass =
   | "girl-freshman"
   | "barretts-type"
   | "sixty-seven-freshman"
+  | "doomscroller-freshman"
   | "hidden";
 
 export type CharacterAbility =
@@ -12,6 +13,7 @@ export type CharacterAbility =
   | "negate-damage-chance"
   | "barrett-damage-multiplier"
   | "random-insta-kill"
+  | "doomscroller"
   | "hidden-ability";
 
 export interface CharacterClassDef {
@@ -82,6 +84,7 @@ export type GamePhase =
   | "intro"
   | "encounter"
   | "victory"
+  | "raid-complete"
   | "game-over";
 
 export interface GameState {
@@ -107,4 +110,6 @@ export interface GameState {
   unclaimedAchievements: string[];
   equippedItemId: string | null;
   defeatedByName: string | null;
+  activeRaidId: string | null;
+  doomscrollerUnlocked: boolean;
 }

@@ -22,6 +22,7 @@ const ACHIEVEMENTS = [
     description: "Defeat 10 mobs (7th Grader, 8th Grader, Fellow Freshman, Sophomore, Junior).",
     goal: 10,
     reward: "🥪 Sandwich",
+    secret: false,
   },
   {
     id: "defeat-barrett",
@@ -29,6 +30,23 @@ const ACHIEVEMENTS = [
     description: 'Defeat Barrett Luke Hutchins for the first time. "Something felt off… like this wasn\'t the true threat."',
     goal: 1,
     reward: "🧰 Bronze Chest",
+    secret: false,
+  },
+  {
+    id: "free-hayes",
+    title: "Free Mr. Hayes",
+    description: "Defeat Captured Mr. Hayes in the Raid and free him from his captors.",
+    goal: 1,
+    reward: "🔮 Silver Chest",
+    secret: false,
+  },
+  {
+    id: "matteo-phone",
+    title: "???",
+    description: "Defeat a specific enemy while holding a specific item. The right combination unlocks something hidden.",
+    goal: 1,
+    reward: "🔓 Unlock: Doomscroller Freshman class",
+    secret: true,
   },
 ];
 
@@ -69,6 +87,7 @@ function AchievementsPanel({
           const claimed = achievements.includes(ach.id);
           const unclaimed = unclaimedAchievements.includes(ach.id);
           const completed = claimed || unclaimed;
+          const isSecret = ach.secret && !completed;
           const progress = ach.id === "defeat-10-mobs" ? Math.min(mobsDefeated, ach.goal) : completed ? ach.goal : 0;
           return (
             <div
@@ -78,19 +97,21 @@ function AchievementsPanel({
                   ? "border-primary/40 bg-primary/5"
                   : unclaimed
                   ? "border-yellow-500/60 bg-yellow-500/10 shadow-[0_0_12px_-4px_rgba(234,179,8,0.4)]"
+                  : isSecret
+                  ? "border-border/30 bg-background/20"
                   : "border-border bg-background/40"
               }`}
             >
               <div className="flex items-start gap-3">
                 <div className={`mt-0.5 text-xl flex-shrink-0 ${completed ? "opacity-100" : "opacity-30"}`}>
-                  {claimed ? "✅" : unclaimed ? "🎁" : "🏆"}
+                  {claimed ? "✅" : unclaimed ? "🎁" : isSecret ? "🔮" : "🏆"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`font-serif font-bold text-sm ${claimed ? "text-primary" : unclaimed ? "text-yellow-400" : "text-foreground"}`}>
-                    {ach.title}
+                  <p className={`font-serif font-bold text-sm ${claimed ? "text-primary" : unclaimed ? "text-yellow-400" : isSecret ? "text-muted-foreground/50" : "text-foreground"}`}>
+                    {isSecret ? "???" : ach.title}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                    {ach.description}
+                    {isSecret ? "Secret achievement — discover the hidden combination." : ach.description}
                   </p>
                   {!completed && (
                     <div className="mt-2 space-y-1">
@@ -796,6 +817,7 @@ function GameContent() {
                     <button
                       disabled={!raid.unlocked}
                       data-testid={`button-raid-${raid.id}`}
+                      onClick={raid.unlocked ? () => game.beginRaid(raid.id) : undefined}
                       className={`w-full text-left p-6 rounded-xl border transition-all duration-300 font-serif
                         ${raid.unlocked
                           ? "border-border bg-card/60 hover:border-primary hover:shadow-[0_0_20px_-5px_hsl(var(--primary))] hover:bg-primary/5 cursor-pointer"
@@ -865,7 +887,9 @@ function GameContent() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {CHARACTER_CLASSES.map((cls) => {
-                  const isLocked = cls.id === "hidden";
+                  const isLocked =
+                    cls.id === "hidden" ||
+                    (cls.id === "doomscroller-freshman" && !state.doomscrollerUnlocked);
                   return (
                     <Card
                       key={cls.id}
@@ -922,60 +946,123 @@ function GameContent() {
                 <CardHeader className="text-center border-b border-border/50 pb-6">
                   <div className="text-5xl mb-2">{state.selectedClass.emoji}</div>
                   <CardTitle className="font-serif text-3xl">
-                    The First Day
+                    {state.activeRaidId
+                      ? state.activeRaidId === "hayes" ? "Mr. Hayes's Room"
+                        : state.activeRaidId === "cronin" ? "Mr. Cronin's Room"
+                        : "Mr. Bryant's Room"
+                      : "The First Day"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6 text-lg leading-relaxed text-muted-foreground">
-                  <p>
-                    The first day of high school. The halls are dangerous. Three
-                    legendary enemies stand between you and legend:{" "}
-                    <span className="text-foreground font-semibold">
-                      "Senior" Bradley
-                    </span>
-                    ,{" "}
-                    <span className="text-foreground font-semibold">
-                      "Super Senior" Westen
-                    </span>
-                    , and the dreaded{" "}
-                    <span className="text-foreground font-semibold text-destructive">
-                      Barrett Luke Hutchins
-                    </span>
-                    .
-                  </p>
-                  <p>
-                    Five mobs guard each boss. Your HP ({state.selectedClass.maxHp}) is your lifeline.
-                    Defeat enemies to collect{" "}
-                    <span className="text-primary font-semibold">gear</span>{" "}
-                    — use it from the hotbar at the bottom. Choose wisely.
-                  </p>
-
-                  <div className="pt-4 space-y-2">
-                    <h3 className="text-primary font-serif font-bold uppercase tracking-wider text-sm">
-                      Zones of Conflict
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {ZONE_NAMES.map((zone, i) => (
-                        <Badge
-                          key={zone}
-                          variant="outline"
-                          className="text-sm py-1 border-primary/30 bg-primary/5 font-serif"
+                  {state.activeRaidId ? (
+                    <>
+                      <p>
+                        You enter{" "}
+                        <span className="text-foreground font-semibold">
+                          {state.activeRaidId === "hayes" ? "Mr. Hayes's" : state.activeRaidId === "cronin" ? "Mr. Cronin's" : "Mr. Bryant's"} Room
+                        </span>
+                        . Someone has taken over. The students are hostile. A captured teacher waits at the end.
+                        {state.activeRaidId === "bryant" && (
+                          <> Rumor has it <span className="text-destructive font-semibold">CK3 Barrett</span> is lurking behind the scenes.</>
+                        )}
+                      </p>
+                      <p>
+                        Your HP ({state.selectedClass.maxHp}) is your lifeline. Defeat enemies to collect{" "}
+                        <span className="text-primary font-semibold">gear</span> — use it wisely. Raid bosses drop{" "}
+                        <span className="text-blue-400 font-semibold">Silver</span> and{" "}
+                        <span className="text-yellow-500 font-semibold">Bronze</span> chests only.
+                      </p>
+                      <div className="pt-4 space-y-2">
+                        <h3 className="text-primary font-serif font-bold uppercase tracking-wider text-sm">
+                          Raid Details
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {state.activeRaidId === "hayes" && (
+                            <>
+                              <Badge variant="outline" className="text-sm py-1 border-primary/30 bg-primary/5 font-serif">14 mobs</Badge>
+                              <Badge variant="outline" className="text-sm py-1 border-destructive/30 bg-destructive/5 font-serif">Boss: Captured Mr. Hayes</Badge>
+                            </>
+                          )}
+                          {state.activeRaidId === "cronin" && (
+                            <>
+                              <Badge variant="outline" className="text-sm py-1 border-primary/30 bg-primary/5 font-serif">14 mobs</Badge>
+                              <Badge variant="outline" className="text-sm py-1 border-destructive/30 bg-destructive/5 font-serif">Boss: Captured Mr. Cronin</Badge>
+                            </>
+                          )}
+                          {state.activeRaidId === "bryant" && (
+                            <>
+                              <Badge variant="outline" className="text-sm py-1 border-primary/30 bg-primary/5 font-serif">9 mobs</Badge>
+                              <Badge variant="outline" className="text-sm py-1 border-destructive/30 bg-destructive/5 font-serif">Boss: Captured Mr. Bryant</Badge>
+                              <Badge variant="outline" className="text-sm py-1 border-red-500/30 bg-red-500/5 text-red-400 font-serif">Secret: CK3 Barrett 👑</Badge>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="pt-6 flex justify-center">
+                        <Button
+                          size="lg"
+                          onClick={game.startRaid}
+                          className="font-serif text-lg px-8 bg-primary hover:bg-primary/90 text-primary-foreground"
+                          data-testid="button-enter-raid"
                         >
-                          Zone {i + 1}: {zone}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+                          Enter the Room
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        The first day of high school. The halls are dangerous. Three
+                        legendary enemies stand between you and legend:{" "}
+                        <span className="text-foreground font-semibold">
+                          "Senior" Bradley
+                        </span>
+                        ,{" "}
+                        <span className="text-foreground font-semibold">
+                          "Super Senior" Westen
+                        </span>
+                        , and the dreaded{" "}
+                        <span className="text-foreground font-semibold text-destructive">
+                          Barrett Luke Hutchins
+                        </span>
+                        .
+                      </p>
+                      <p>
+                        Five mobs guard each boss. Your HP ({state.selectedClass.maxHp}) is your lifeline.
+                        Defeat enemies to collect{" "}
+                        <span className="text-primary font-semibold">gear</span>{" "}
+                        — use it from the hotbar at the bottom. Choose wisely.
+                      </p>
 
-                  <div className="pt-6 flex justify-center">
-                    <Button
-                      size="lg"
-                      onClick={game.startGame}
-                      className="font-serif text-lg px-8 bg-primary hover:bg-primary/90 text-primary-foreground"
-                      data-testid="button-enter-halls"
-                    >
-                      Enter the Halls
-                    </Button>
-                  </div>
+                      <div className="pt-4 space-y-2">
+                        <h3 className="text-primary font-serif font-bold uppercase tracking-wider text-sm">
+                          Zones of Conflict
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {ZONE_NAMES.map((zone, i) => (
+                            <Badge
+                              key={zone}
+                              variant="outline"
+                              className="text-sm py-1 border-primary/30 bg-primary/5 font-serif"
+                            >
+                              Zone {i + 1}: {zone}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-6 flex justify-center">
+                        <Button
+                          size="lg"
+                          onClick={game.startGame}
+                          className="font-serif text-lg px-8 bg-primary hover:bg-primary/90 text-primary-foreground"
+                          data-testid="button-enter-halls"
+                        >
+                          Enter the Halls
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -1246,6 +1333,73 @@ function GameContent() {
               >
                 Return to the Title
               </Button>
+            </motion.div>
+          )}
+
+          {/* ── RAID COMPLETE ── */}
+          {state.phase === "raid-complete" && (
+            <motion.div
+              key="raid-complete"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="flex flex-col items-center text-center space-y-10 py-12"
+            >
+              <div className="space-y-4">
+                <div className="text-6xl mb-2">⚔️</div>
+                <h1 className="text-5xl sm:text-6xl font-serif font-bold text-primary tracking-wider drop-shadow-[0_0_30px_hsl(var(--primary))]">
+                  RAID COMPLETE
+                </h1>
+                <p className="text-xl font-serif text-foreground max-w-2xl mx-auto italic bg-card/50 p-6 rounded-xl border border-border">
+                  {state.activeRaidId === "hayes"
+                    ? "Mr. Hayes is free. The room is yours. The students scatter. Hayes nods once — respect earned."
+                    : state.activeRaidId === "cronin"
+                    ? "Mr. Cronin adjusts his tie, takes a breath, and writes your name on the board. Not as a detention. As an example."
+                    : "The King has fallen. CK3 Barrett's grip on Bryant's room — and this school — is broken. This will be remembered."}
+                </p>
+              </div>
+
+              {state.pendingDrops.length > 0 && (
+                <div className="space-y-3 w-full max-w-sm">
+                  <h2 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">Raid Loot</h2>
+                  {state.pendingDrops.map((drop) => (
+                    <div key={drop.instanceId} className="flex items-center gap-3 bg-card/60 border border-border rounded-lg px-4 py-2">
+                      <span className="text-2xl">{drop.def.emoji}</span>
+                      <span className="font-serif text-foreground">{drop.def.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-3 w-full max-w-sm">
+                <h2 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">Enemies Defeated</h2>
+                {state.defeatedBosses.map((boss, i) => (
+                  <div key={i} className="flex items-center justify-between font-serif text-base border-b border-border/50 pb-2">
+                    <span className="text-foreground">{boss}</span>
+                    <span className="text-accent text-sm">FREED</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-4 w-full max-w-sm">
+                <Button
+                  size="lg"
+                  className="text-lg px-8 py-6 font-serif bg-primary hover:bg-primary/90 text-primary-foreground"
+                  onClick={game.goToRaidSelect}
+                  data-testid="button-back-raid-select"
+                >
+                  Back to Raids
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="font-serif border-border hover:bg-card/80"
+                  onClick={game.goToTitle}
+                >
+                  Return to Title
+                </Button>
+              </div>
             </motion.div>
           )}
 

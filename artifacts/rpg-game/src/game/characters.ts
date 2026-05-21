@@ -52,9 +52,19 @@ export const CHARACTER_CLASSES: CharacterClassDef[] = [
     ability: "random-insta-kill",
   },
   {
+    id: "doomscroller-freshman",
+    name: "Doomscroller Freshman",
+    description:
+      "Phone in hand, eyes glazed, mind running at full speed. You've consumed enough content to bend reality slightly in your favor.",
+    maxHp: 125,
+    bonus: "Deals x1.1 damage on every choice. 15% chance to loot a chest after defeating any enemy.",
+    emoji: "📲",
+    ability: "doomscroller",
+  },
+  {
     id: "hidden",
     name: "???",
-    description: "This class cannot be unlocked.",
+    description: "This class is locked.",
     maxHp: 0,
     bonus: "???",
     emoji: "🔒",

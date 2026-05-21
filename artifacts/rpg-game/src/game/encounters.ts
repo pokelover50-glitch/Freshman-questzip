@@ -724,3 +724,519 @@ export const ACHIEVEMENT_MOB_IDS = new Set([
   "sophomore",
   "junior",
 ]);
+
+// ─── RAID ENCOUNTERS ──────────────────────────────────────────────────────────
+
+function raidMob(
+  id: string, enemyName: string, enemyEmoji: string, enemyMaxHp: number, mobDmg: number,
+  situation: string, question: string,
+  choices: { text: string; enemyDamage: number; narrative: string; badChoice?: boolean }[]
+): Encounter {
+  return {
+    id, enemyName, enemyEmoji, enemyMaxHp, isBoss: false,
+    victoryText: "They back down. One less obstacle.",
+    defeatText: `${enemyName} got the better of you.`,
+    rounds: [{
+      situation, question,
+      choices: choices.map((c) => ({
+        text: c.text,
+        playerDamage: c.badChoice ? mobDmg * 2 : mobDmg,
+        enemyDamage: c.enemyDamage,
+        healAmount: 0,
+        narrative: c.narrative,
+      })),
+    }],
+  };
+}
+
+// ── Hayes Room Mobs ──────────────────────────────────────────────────────────
+
+const RAID_INDIAN_FRESHMAN: Encounter = raidMob(
+  "raid-indian-freshman", "Indian Freshman", "🧑‍🎓", 100, 7,
+  "An Indian freshman plants themselves in front of the classroom door, arms crossed.",
+  "How do you handle this?",
+  [
+    { text: "Mention your GPA unprompted.", enemyDamage: 18, narrative: "Academic dominance established in three words. They shrink." },
+    { text: "Ask which AP classes they're taking.", enemyDamage: 12, narrative: "Puts you on their tier immediately. They're slightly rattled." },
+    { text: "Say nothing and walk through.", enemyDamage: 15, narrative: "Silence hits different. They move." },
+    { text: "Try to make friends.", enemyDamage: 0, narrative: "They take the warmth as weakness and use it.", badChoice: true },
+    { text: "Ask about the homework assignment.", enemyDamage: 10, narrative: "Neutral opener. Subtly puts you on equal footing." },
+  ]
+);
+
+const RAID_INDIAN_SOPHOMORE: Encounter = raidMob(
+  "raid-indian-sophomore", "Indian Sophomore", "🧑‍💻", 110, 7,
+  "An Indian sophomore lectures you about how freshmen don't belong in this hall.",
+  "Your response?",
+  [
+    { text: "\"And yet, here I am.\"", enemyDamage: 20, narrative: "Clean and irrefutable. They stammer." },
+    { text: "Reference a topic from the class.", enemyDamage: 16, narrative: "Showing you know the material kills their argument instantly." },
+    { text: "\"Interesting. Cool story.\"", enemyDamage: 14, narrative: "Weaponized disinterest. They hate it." },
+    { text: "Wait for them to finish.", enemyDamage: 10, narrative: "Patience as a weapon. They run out of steam." },
+    { text: "Laugh awkwardly.", enemyDamage: 0, narrative: "They take it as confirmation. Bad move.", badChoice: true },
+  ]
+);
+
+const RAID_INDIAN_JUNIOR: Encounter = raidMob(
+  "raid-indian-junior", "Indian Junior", "📚", 120, 7,
+  "An Indian junior quizzes you with a question from the syllabus.",
+  "What do you do?",
+  [
+    { text: "Answer correctly without hesitation.", enemyDamage: 22, narrative: "A freshman matching a junior academically is devastating." },
+    { text: "Ask a sharper follow-up question.", enemyDamage: 18, narrative: "Flipping the challenge shows you're operating above them." },
+    { text: "Quote Mr. Hayes from last class.", enemyDamage: 20, narrative: "You've been paying attention. They clearly haven't. Game over." },
+    { text: "Admit you don't know.", enemyDamage: 6, narrative: "Honest but costs you the exchange.", badChoice: true },
+  ]
+);
+
+const RAID_INDIAN_SENIOR: Encounter = raidMob(
+  "raid-indian-senior", "Indian Senior", "🎓", 130, 9,
+  "An Indian senior looks down at you like you don't belong anywhere near this classroom.",
+  "What do you say?",
+  [
+    { text: "\"I'm in this class too.\"", enemyDamage: 18, narrative: "Simple and unshakeable. They have no rebuttal." },
+    { text: "Stare them down silently.", enemyDamage: 22, narrative: "A freshman staring down a senior breaks their brain." },
+    { text: "\"Nice college essay, by the way.\"", enemyDamage: 28, narrative: "The implication that you've read it sends them spiraling." },
+    { text: "Drop a precise fact about the curriculum.", enemyDamage: 20, narrative: "Knowledge nullifies their seniority advantage." },
+    { text: "Laugh nervously.", enemyDamage: 0, narrative: "Weakness detected. They loom larger.", badChoice: true },
+  ]
+);
+
+const RAID_JAYDEN: Encounter = raidMob(
+  "raid-jayden", "Jayden", "😤", 150, 9,
+  "Jayden squares up right outside Mr. Hayes's door like he owns the place.",
+  "What do you do?",
+  [
+    { text: "\"Jayden. Sit down.\"", enemyDamage: 28, narrative: "Teacher-voice. From a freshman. Jayden's soul leaves his body." },
+    { text: "Ignore him and walk straight in.", enemyDamage: 22, narrative: "Jayden shouts at your back and looks ridiculous." },
+    { text: "Remind him of his last test score.", enemyDamage: 32, narrative: "The receipts are devastating. He goes silent, then red." },
+    { text: "Ask if he needs help with the material.", enemyDamage: 18, narrative: "Condescending kindness hits harder than any insult." },
+    { text: "Throw your hands up and walk away.", enemyDamage: 0, narrative: "He counts that as a win. Don't do this.", badChoice: true },
+  ]
+);
+
+const RAID_BOSS_HAYES: Encounter = {
+  id: "raid-boss-hayes",
+  enemyName: "Captured Mr. Hayes",
+  enemyEmoji: "😰",
+  enemyMaxHp: 500,
+  isBoss: true,
+  victoryText: "The real Mr. Hayes is freed. He nods at you with quiet gratitude. You've done it.",
+  defeatText: "Mr. Hayes's captor prevails this round. Regroup.",
+  rounds: [
+    {
+      situation: "Mr. Hayes stands bound but composed, testing whether you deserve his trust.",
+      question: "\"You — freshman. Prove to me you belong here. What's the first thing you'd change about this school?\"",
+      choices: [
+        { text: "\"The way teachers get silenced.\"", playerDamage: 12, enemyDamage: 80, healAmount: 0, narrative: "It hits exactly where it should. Mr. Hayes's eyes sharpen with recognition." },
+        { text: "\"Nothing — I'd protect what makes it worth fighting for.\"", playerDamage: 12, enemyDamage: 100, healAmount: 0, narrative: "The strongest answer. Mr. Hayes visibly relaxes. The bindings weaken." },
+        { text: "\"The people who think they own it.\"", playerDamage: 12, enemyDamage: 90, healAmount: 0, narrative: "Pointed and accurate. Mr. Hayes gives a small nod of approval." },
+        { text: "\"More hall passes.\"", playerDamage: 30, enemyDamage: 0, healAmount: 0, narrative: "He expected more. The bindings tighten." },
+      ],
+    },
+    {
+      situation: "Mr. Hayes is starting to trust you. But his captor's influence is still strong.",
+      question: "\"Tell me — who sent you in here?\"",
+      choices: [
+        { text: "\"Nobody. I came on my own.\"", playerDamage: 12, enemyDamage: 130, healAmount: 0, narrative: "Autonomous initiative impresses him deeply. The chains loosen." },
+        { text: "\"The other students.\"", playerDamage: 12, enemyDamage: 110, healAmount: 0, narrative: "Representing others is noble. He nods, grateful." },
+        { text: "\"Mr. Cronin told me about this place.\"", playerDamage: 12, enemyDamage: 120, healAmount: 0, narrative: "A credible reference. Mr. Hayes trusts Cronin. The hold weakens." },
+        { text: "\"I was just passing through.\"", playerDamage: 30, enemyDamage: 0, healAmount: 0, narrative: "He doesn't believe you, and neither does anyone watching." },
+      ],
+    },
+    {
+      situation: "The final test. One answer will free him completely.",
+      question: "\"Last question. What does it mean to be a good student?\"",
+      choices: [
+        { text: "\"Show up. Ask questions. Give a damn.\"", playerDamage: 12, enemyDamage: 160, healAmount: 0, narrative: "Three words that say everything. The bindings snap. Mr. Hayes is free." },
+        { text: "\"Be curious even when it's inconvenient.\"", playerDamage: 12, enemyDamage: 150, healAmount: 0, narrative: "Philosophical and precise. Mr. Hayes breaks free with a determined expression." },
+        { text: "\"I don't know, but I'm trying to find out.\"", playerDamage: 12, enemyDamage: 140, healAmount: 5, narrative: "Humble honesty is its own kind of strength. He smiles. The room brightens." },
+        { text: "\"Get good grades.\"", playerDamage: 25, enemyDamage: 40, healAmount: 0, narrative: "Surface-level. He expected depth. The captors tighten their grip." },
+      ],
+    },
+  ],
+};
+
+// ── Cronin Room Mobs ─────────────────────────────────────────────────────────
+
+const RAID_AP_FRESHMAN: Encounter = raidMob(
+  "raid-ap-freshman", "AP Freshman", "📋", 130, 7,
+  "An AP freshman shoves a practice exam in your face, daring you to compare scores.",
+  "What's your move?",
+  [
+    { text: "Scan it and point out an error.", enemyDamage: 22, narrative: "Identifying their mistake on sight establishes instant dominance." },
+    { text: "\"I already finished mine.\"", enemyDamage: 18, narrative: "Casual academic confidence. They wince." },
+    { text: "Compare answer choices methodically.", enemyDamage: 16, narrative: "Your analytical approach subtly exposes their gaps." },
+    { text: "Pretend you haven't started.", enemyDamage: 0, narrative: "They feel superior. A catastrophic error.", badChoice: true },
+  ]
+);
+
+const RAID_AP_SOPHOMORE: Encounter = raidMob(
+  "raid-ap-sophomore", "AP Sophomore", "📝", 130, 7,
+  "An AP sophomore claims their GPA is higher and won't stop talking about it.",
+  "How do you respond?",
+  [
+    { text: "\"Cool. Mine's higher.\"", enemyDamage: 22, narrative: "Calm certainty. They immediately start recalculating." },
+    { text: "\"GPAs are just one metric.\"", enemyDamage: 18, narrative: "Philosophically sound. They can't argue it." },
+    { text: "Produce your transcript.", enemyDamage: 28, narrative: "Evidence-based rebuttal. They go quiet." },
+    { text: "\"That's great for you!\"", enemyDamage: 0, narrative: "Too kind. They take the point and run.", badChoice: true },
+  ]
+);
+
+const RAID_AP_JUNIOR: Encounter = raidMob(
+  "raid-ap-junior", "AP Junior", "🔬", 150, 11,
+  "An AP junior lectures you about how brutal junior year is, implying you couldn't handle it.",
+  "Your response?",
+  [
+    { text: "\"Can't wait.\"", enemyDamage: 22, narrative: "Fearlessness unnerves them. They were trying to scare you." },
+    { text: "\"My schedule's already harder.\"", enemyDamage: 30, narrative: "Checking the receipts publicly. They seethe." },
+    { text: "\"Didn't seniors say the same thing about 10th grade?\"", enemyDamage: 26, narrative: "Exposing the cycle of overblown difficulty claims. They have no defense." },
+    { text: "Nod sympathetically.", enemyDamage: 0, narrative: "You just validated their whole bit. They grow bolder.", badChoice: true },
+  ]
+);
+
+const RAID_AP_SENIOR: Encounter = raidMob(
+  "raid-ap-senior", "AP Senior", "🏫", 175, 11,
+  "An AP senior tells you freshmen shouldn't be in AP classes. Everyone's watching.",
+  "What do you say?",
+  [
+    { text: "\"And yet, here I am.\"", enemyDamage: 32, narrative: "The most powerful answer. They can't dispute it." },
+    { text: "Show them your 5 on last year's AP exam.", enemyDamage: 38, narrative: "Cold hard evidence silences the room." },
+    { text: "\"Mr. Cronin invited me personally.\"", enemyDamage: 30, narrative: "Name-dropping the teacher they answer to. Smart." },
+    { text: "\"That used to be the rule. I changed it.\"", enemyDamage: 28, narrative: "Audacious. They look around for confirmation. Nobody contradicts you." },
+    { text: "Agree with them.", enemyDamage: 0, narrative: "You've just made their case for them.", badChoice: true },
+  ]
+);
+
+const RAID_BASEBALL_JOCK: Encounter = raidMob(
+  "raid-baseball-jock", "Baseball Jock", "⚾", 200, 13,
+  "A baseball jock knocks your notes out of your hands in the middle of the hallway.",
+  "What do you do?",
+  [
+    { text: "Pick them up slowly and stare him down.", enemyDamage: 28, narrative: "Unblinking composure vs raw aggression. You win." },
+    { text: "\"Those were organized.\"", enemyDamage: 32, narrative: "The disappointment in your voice makes him actually apologize." },
+    { text: "\"Enjoy summer school.\"", enemyDamage: 38, narrative: "One sentence. It's completely over." },
+    { text: "Report it to Mr. Cronin.", enemyDamage: 22, narrative: "Institutional power move. Slow but effective." },
+    { text: "Yell at him immediately.", enemyDamage: 0, narrative: "He's twice your size. This was a mistake.", badChoice: true },
+  ]
+);
+
+const RAID_TEACHERS_PET: Encounter = raidMob(
+  "raid-teachers-pet", "Teacher's Pet", "🍎", 200, 13,
+  "The teacher's pet reports you to Mr. Cronin for talking in class — even though it was them.",
+  "Your counter?",
+  [
+    { text: "\"I was answering his question.\"", enemyDamage: 32, narrative: "Mr. Cronin nods. The pet looks mortified." },
+    { text: "\"Thank you for your concern.\"", enemyDamage: 28, narrative: "Weaponized politeness. They short-circuit." },
+    { text: "\"You know everyone hates this, right?\"", enemyDamage: 38, narrative: "Blunt social reality check. They crumble." },
+    { text: "Produce evidence that it was them talking.", enemyDamage: 42, narrative: "Reversal of evidence. Mr. Cronin turns to the pet." },
+    { text: "Accept the reprimand silently.", enemyDamage: 0, narrative: "You lose the exchange entirely.", badChoice: true },
+  ]
+);
+
+const RAID_MATTEO: Encounter = {
+  id: "raid-mob-matteo",
+  enemyName: "Matteo",
+  enemyEmoji: "📱",
+  enemyMaxHp: 250,
+  isBoss: false,
+  victoryText: "Matteo's phone goes dark. The crowd disperses. You've beaten him on his own turf.",
+  defeatText: "Matteo films the whole thing and posts it. You've lost this one.",
+  rounds: [
+    {
+      situation: "Matteo blocks the hallway, phone raised, filming. Everyone's watching.",
+      question: "Matteo says: \"You really think you can beat me HERE? In Cronin's room?\"",
+      choices: [
+        { text: "\"Your phone's at 4%. Sit down.\"", playerDamage: 15, enemyDamage: 50, healAmount: 0, narrative: "The battery observation silences everyone. Matteo checks instinctively. You strike." },
+        { text: "\"I already beat you once. This is a formality.\"", playerDamage: 15, enemyDamage: 45, healAmount: 0, narrative: "Treating this as routine deflates his confidence completely." },
+        { text: "\"Mr. Cronin's watching.\"", playerDamage: 15, enemyDamage: 38, healAmount: 0, narrative: "Matteo spins around. Cronin isn't there yet, but the paranoia is real." },
+        { text: "Freeze up.", playerDamage: 30, enemyDamage: 0, healAmount: 0, narrative: "Matteo films the entire freeze. This one goes viral." },
+      ],
+    },
+    {
+      situation: "Matteo's getting serious. He opens three apps and types at blinding speed.",
+      question: "\"You've got one chance to convince everyone I'm wrong. Go.\"",
+      choices: [
+        { text: "\"Put the phone down and fight fair.\"", playerDamage: 15, enemyDamage: 55, healAmount: 0, narrative: "Matteo pauses. Without the phone, he's just a guy." },
+        { text: "\"You're not wrong. You're just irrelevant.\"", playerDamage: 15, enemyDamage: 65, healAmount: 0, narrative: "Transcendent burn. The crowd reacts loudly." },
+        { text: "Name every class he's failed.", playerDamage: 15, enemyDamage: 60, healAmount: 0, narrative: "The receipts are devastating. People start backing away from Matteo." },
+        { text: "Say nothing and walk away.", playerDamage: 35, enemyDamage: 0, healAmount: 0, narrative: "Matteo narrates your retreat in real time. It's bad." },
+      ],
+    },
+  ],
+};
+
+const RAID_BOSS_CRONIN: Encounter = {
+  id: "raid-boss-cronin",
+  enemyName: "Captured Mr. Cronin",
+  enemyEmoji: "😤",
+  enemyMaxHp: 800,
+  isBoss: true,
+  victoryText: "Mr. Cronin is free. He straightens his tie, nods once, and says: 'Good work.'",
+  defeatText: "Even captured, Cronin outmaneuvers you. Regroup and try again.",
+  rounds: [
+    {
+      situation: "Mr. Cronin, still sharp even in captivity, stares you down from across the room.",
+      question: "\"You want to free me? First — what is the derivative of x³?\"",
+      choices: [
+        { text: "\"3x².\"", playerDamage: 20, enemyDamage: 130, healAmount: 0, narrative: "Immediate and correct. Cronin's posture shifts. You pass." },
+        { text: "\"That depends on whether we're using implicit differentiation.\"", playerDamage: 20, enemyDamage: 160, healAmount: 0, narrative: "Deeper knowledge than required. Cronin looks genuinely impressed — high praise from him." },
+        { text: "\"I'll need a whiteboard.\"", playerDamage: 20, enemyDamage: 90, healAmount: 0, narrative: "Showing your work instinct impresses him. Partial credit." },
+        { text: "\"The answer is x to the third.\"", playerDamage: 45, enemyDamage: 0, healAmount: 0, narrative: "Dead wrong. Cronin sighs deeply. The captors tighten their grip." },
+      ],
+    },
+    {
+      situation: "Cronin tests your understanding of the bigger picture.",
+      question: "\"Why does any of this math matter?\"",
+      choices: [
+        { text: "\"It trains your brain to think precisely under pressure.\"", playerDamage: 20, enemyDamage: 200, healAmount: 0, narrative: "Exactly what he believes. The captors loosen their hold." },
+        { text: "\"It makes everything else make sense.\"", playerDamage: 20, enemyDamage: 185, healAmount: 0, narrative: "A beautiful answer. Cronin nods once, slowly." },
+        { text: "\"It doesn't. But you love it, so I'll learn it.\"", playerDamage: 20, enemyDamage: 170, healAmount: 0, narrative: "Honest and respectful. Cronin almost smiles." },
+        { text: "\"For the test.\"", playerDamage: 45, enemyDamage: 20, healAmount: 0, narrative: "Cronin closes his eyes. You've said the worst possible thing." },
+      ],
+    },
+    {
+      situation: "Final test. Cronin's captors are weakening. One more exchange and he's free.",
+      question: "\"Prove you're ready. What's 1000 divided by 8, in your head, right now.\"",
+      choices: [
+        { text: "\"125.\"", playerDamage: 20, enemyDamage: 260, healAmount: 0, narrative: "Instant. No hesitation. Cronin breaks free." },
+        { text: "Take 3 seconds and get it right.", playerDamage: 20, enemyDamage: 230, healAmount: 0, narrative: "Not instant, but correct. Cronin approves." },
+        { text: "\"About 120-ish?\"", playerDamage: 35, enemyDamage: 60, healAmount: 0, narrative: "Close but sloppy. Cronin grimaces." },
+        { text: "Ask for a calculator.", playerDamage: 55, enemyDamage: 0, healAmount: 0, narrative: "An unforgivable request in this context. The captors laugh." },
+      ],
+    },
+  ],
+};
+
+// ── Bryant Room Mobs ─────────────────────────────────────────────────────────
+
+const RAID_YN_FRESHMAN: Encounter = raidMob(
+  "raid-yn-freshman", "YN Freshman", "😮", 100, 5,
+  "A YN freshman stares you down from across the hallway outside Bryant's room.",
+  "What do you do?",
+  [
+    { text: "Stare right back, don't blink.", enemyDamage: 16, narrative: "Unflinching. They look away first." },
+    { text: "Nod once and walk past.", enemyDamage: 13, narrative: "Confidence without confrontation. Respect earned." },
+    { text: "\"You good?\"", enemyDamage: 11, narrative: "Casual neutralization. They're not sure if you're friendly or threatening. Perfect." },
+    { text: "Wave awkwardly.", enemyDamage: 0, narrative: "They laugh. This was a mistake.", badChoice: true },
+  ]
+);
+
+const RAID_YN_SOPHOMORE: Encounter = raidMob(
+  "raid-yn-sophomore", "YN Sophomore", "🕶️", 100, 5,
+  "A YN sophomore blocks the doorway and crosses their arms.",
+  "What's your play?",
+  [
+    { text: "\"Move.\"", enemyDamage: 16, narrative: "One word, delivered calmly. They move." },
+    { text: "Walk straight at them.", enemyDamage: 13, narrative: "They step aside instinctively." },
+    { text: "\"Bryant know you're blocking his door?\"", enemyDamage: 20, narrative: "Name-dropping the boss. They step aside fast." },
+    { text: "Wait and see if they move.", enemyDamage: 0, narrative: "They don't. This standoff ends badly for you.", badChoice: true },
+  ]
+);
+
+const RAID_YN_JUNIOR: Encounter = raidMob(
+  "raid-yn-junior", "YN Junior", "💢", 130, 8,
+  "A YN junior challenges you for being in Bryant's territory.",
+  "What do you say?",
+  [
+    { text: "\"I go where I want.\"", enemyDamage: 22, narrative: "Territorial confidence. They weren't ready for that." },
+    { text: "\"Bryant invited me.\"", enemyDamage: 24, narrative: "Bluff or truth — either way it works." },
+    { text: "Walk past them without responding.", enemyDamage: 20, narrative: "The silence is deafening. They can't catch up." },
+    { text: "Apologize and back off.", enemyDamage: 0, narrative: "You retreat. They spread the word.", badChoice: true },
+  ]
+);
+
+const RAID_YN_SENIOR: Encounter = raidMob(
+  "raid-yn-senior", "YN Senior", "😠", 130, 8,
+  "A YN senior steps forward and says this is your last warning.",
+  "What do you do?",
+  [
+    { text: "\"Appreciate the heads up.\"", enemyDamage: 24, narrative: "Casual absorption of a threat. It drives them crazy." },
+    { text: "\"Already past my last warning.\"", enemyDamage: 30, narrative: "Implying this isn't your first rodeo. They hesitate." },
+    { text: "\"I'm shaking.\"", enemyDamage: 32, narrative: "Dripping with sarcasm. They have no response." },
+    { text: "Run.", enemyDamage: 0, narrative: "They don't even chase. They don't need to.", badChoice: true },
+  ]
+);
+
+const RAID_YN_LEADER: Encounter = raidMob(
+  "raid-yn-leader", "YN Leader", "👊", 150, 8,
+  "The YN Leader steps forward, arms crossed. This one runs things.",
+  "How do you respond?",
+  [
+    { text: "\"I know about the arrangement with Bryant.\"", enemyDamage: 32, narrative: "You know something. They don't know what. Now they're nervous." },
+    { text: "\"Step aside. I'm not here for you.\"", enemyDamage: 28, narrative: "Controlled dismissal from a freshman. They're stunned." },
+    { text: "\"Nice crew. Pity about the loyalty.\"", enemyDamage: 36, narrative: "Seeds of internal doubt planted instantly. They lose focus." },
+    { text: "Back away slowly.", enemyDamage: 0, narrative: "You've given them everything they need.", badChoice: true },
+  ]
+);
+
+const RAID_DEVON: Encounter = {
+  id: "raid-mob-devon",
+  enemyName: "Devon",
+  enemyEmoji: "🎯",
+  enemyMaxHp: 175,
+  isBoss: false,
+  victoryText: "Devon backs off, jaw tight. \"We'll finish this later.\" You both know you won.",
+  defeatText: "Devon grinds you down. Come back stronger.",
+  rounds: [
+    {
+      situation: "Devon materializes from the crowd like he's been waiting specifically for you.",
+      question: "\"You've been stirring things up. Why?\"",
+      choices: [
+        { text: "\"Because someone had to.\"", playerDamage: 10, enemyDamage: 42, healAmount: 0, narrative: "Clean, honest, unavoidable. Devon has no comeback." },
+        { text: "\"Because I can.\"", playerDamage: 10, enemyDamage: 48, healAmount: 0, narrative: "Pure confidence. Devon's expression darkens." },
+        { text: "\"Ask Bryant.\"", playerDamage: 10, enemyDamage: 38, healAmount: 0, narrative: "Redirecting to the boss is a power move. Devon clams up." },
+        { text: "\"I'm just passing through.\"", playerDamage: 25, enemyDamage: 0, healAmount: 0, narrative: "Devon doesn't buy it and neither does anyone watching." },
+      ],
+    },
+  ],
+};
+
+const RAID_BRYCE: Encounter = raidMob(
+  "raid-mob-bryce", "Bryce", "🏋️", 200, 15,
+  "Bryce cracks his knuckles and squares up. He's been designated to stop you.",
+  "What's your move?",
+  [
+    { text: "\"That's a lot of muscle for someone who failed PE.\"", enemyDamage: 40, narrative: "One needle precisely placed. Bryce goes purple." },
+    { text: "Walk through him like he's furniture.", enemyDamage: 30, narrative: "Pure audacity. He's too stunned to react." },
+    { text: "\"Bryant sent his BEST?\"", enemyDamage: 35, narrative: "The poisoned flattery. Bryce doesn't know whether to be proud or offended." },
+    { text: "\"I've been waiting for a real fight.\"", enemyDamage: 32, narrative: "You relish the challenge. Bryce hesitates — he expected fear." },
+    { text: "Challenge him to an arm wrestle.", enemyDamage: 0, narrative: "You lose immediately. He's Bryce.", badChoice: true },
+  ]
+);
+
+const RAID_BOSS_BRYANT: Encounter = {
+  id: "raid-boss-bryant",
+  enemyName: "Captured Mr. Bryant",
+  enemyEmoji: "😤",
+  enemyMaxHp: 500,
+  isBoss: true,
+  victoryText: "Mr. Bryant is shaken free — but something shifts in the room.",
+  defeatText: "Mr. Bryant's captor prevails. Fall back.",
+  rounds: [
+    {
+      situation: "Mr. Bryant stands cornered but defiant, still holding some of his captor's influence.",
+      question: "\"You really came in here? What do you want, freshman?\"",
+      choices: [
+        { text: "\"Your freedom. We're taking this room back.\"", playerDamage: 15, enemyDamage: 110, healAmount: 0, narrative: "Purpose-driven. Bryant's resistance flickers." },
+        { text: "\"To settle this once and for all.\"", playerDamage: 15, enemyDamage: 95, healAmount: 0, narrative: "Finality in your voice. Bryant straightens slightly." },
+        { text: "\"Someone told me you needed help.\"", playerDamage: 15, enemyDamage: 80, healAmount: 0, narrative: "Empathy catches Bryant off guard. His guard drops." },
+        { text: "\"To pass this class actually.\"", playerDamage: 35, enemyDamage: 10, healAmount: 0, narrative: "Wrong room, wrong time, wrong answer." },
+      ],
+    },
+    {
+      situation: "Bryant is weakening. His captor's grip is loosening. Push harder.",
+      question: "\"They told me you'd never get past Devon. How did you?\"",
+      choices: [
+        { text: "\"Devon made the mistake of underestimating me.\"", playerDamage: 15, enemyDamage: 130, healAmount: 0, narrative: "Said plainly. Bryant almost smiles." },
+        { text: "\"I had help from everyone they pushed around.\"", playerDamage: 15, enemyDamage: 120, healAmount: 0, narrative: "Invoking the collective. Bryant's eyes widen." },
+        { text: "\"Devon slipped. It happens.\"", playerDamage: 15, enemyDamage: 110, healAmount: 0, narrative: "Calm and dismissive. Bryant respects the composure." },
+        { text: "Shrug and say nothing.", playerDamage: 35, enemyDamage: 0, healAmount: 0, narrative: "Bryant needs more than silence right now." },
+      ],
+    },
+  ],
+};
+
+const RAID_CK3_BARRETT: Encounter = {
+  id: "raid-boss-ck3-barrett",
+  enemyName: "Ck3 \"King\" Barrett",
+  enemyEmoji: "👑",
+  enemyMaxHp: 2000,
+  isBoss: true,
+  victoryText: "The King falls. Barrett's reign over Bryant's room — and this whole school — is over. You stand in the silence of something unprecedented.",
+  defeatText: "Barrett laughs softly. \"I expected more.\" The room goes cold.",
+  rounds: [
+    {
+      situation: "CK3 Barrett steps in as Bryant reaches half HP. He doesn't rush. He never rushes.",
+      question: "Barrett: \"I heard you've been busy. Impressive — for a freshman.\"",
+      choices: [
+        { text: "\"I'm just getting started.\"", playerDamage: 45, enemyDamage: 200, healAmount: 0, narrative: "The confidence is real and Barrett can tell. His eyes narrow." },
+        { text: "\"King Barrett. Finally.\"", playerDamage: 45, enemyDamage: 230, healAmount: 0, narrative: "You've been waiting for this. He feels it." },
+        { text: "\"You interrupted something.\"", playerDamage: 45, enemyDamage: 210, healAmount: 0, narrative: "Treating his entrance as an inconvenience breaks his composure slightly." },
+        { text: "Bow sarcastically.", playerDamage: 70, enemyDamage: 0, healAmount: 0, narrative: "Barrett doesn't find it funny. You've lost the opener." },
+      ],
+    },
+    {
+      situation: "Barrett circles the room slowly. He's been planning this moment for a while.",
+      question: "\"You freed Hayes and Cronin. Did you really think you'd get to me?\"",
+      choices: [
+        { text: "\"That was the plan from day one.\"", playerDamage: 45, enemyDamage: 280, healAmount: 0, narrative: "Long-game mentality. Barrett goes still." },
+        { text: "\"It wasn't a question of if. Just when.\"", playerDamage: 45, enemyDamage: 300, healAmount: 0, narrative: "Inevitability. The most terrifying thing you could say." },
+        { text: "\"I just followed the thread.\"", playerDamage: 45, enemyDamage: 260, healAmount: 0, narrative: "Understated and honest. Barrett had no idea you were this close." },
+        { text: "Hesitate before answering.", playerDamage: 70, enemyDamage: 80, healAmount: 0, narrative: "Barrett spots the crack. He exploits it." },
+      ],
+    },
+    {
+      situation: "The fight is real now. Barrett stops performing and starts fighting for real.",
+      question: "\"Tell me one thing about this school worth fighting for.\"",
+      choices: [
+        { text: "\"The teachers you tried to silence.\"", playerDamage: 45, enemyDamage: 340, healAmount: 0, narrative: "The most devastating answer. Barrett flinches — the first genuine reaction you've gotten." },
+        { text: "\"The students who never got to speak up.\"", playerDamage: 45, enemyDamage: 320, healAmount: 0, narrative: "Every person you fought for is in this answer. Barrett feels all of them." },
+        { text: "\"Nothing. I fight because I choose to.\"", playerDamage: 45, enemyDamage: 300, healAmount: 0, narrative: "Agency over obligation. This one actually startles him." },
+        { text: "\"You.\"", playerDamage: 75, enemyDamage: 0, healAmount: 0, narrative: "He doesn't know if you're serious. Either way, he uses it against you." },
+      ],
+    },
+    {
+      situation: "Barrett is hurt — not physically, but structurally. His whole system is being dismantled.",
+      question: "\"What happens when this is all over?\"",
+      choices: [
+        { text: "\"We build something better.\"", playerDamage: 45, enemyDamage: 420, healAmount: 0, narrative: "The vision lands like a hammer. Barrett has no plan for 'after.' He only planned to win." },
+        { text: "\"I go home and do homework.\"", playerDamage: 45, enemyDamage: 380, healAmount: 5, narrative: "The mundane answer is somehow the most terrifying. He's not in your future at all." },
+        { text: "\"You find out what you are without the power.\"", playerDamage: 45, enemyDamage: 440, healAmount: 0, narrative: "The existential strike lands perfectly. Barrett pauses. He doesn't have an answer." },
+        { text: "\"Doesn't matter. This is over now.\"", playerDamage: 65, enemyDamage: 120, healAmount: 0, narrative: "Premature conclusion. Barrett hasn't finished yet." },
+      ],
+    },
+  ],
+};
+
+// ─── RAID ENCOUNTER ARRAYS ────────────────────────────────────────────────────
+
+export const RAID_ENCOUNTERS: Record<string, Encounter[]> = {
+  "hayes": [
+    RAID_INDIAN_FRESHMAN,   // 1
+    RAID_INDIAN_SOPHOMORE,  // 2
+    RAID_INDIAN_JUNIOR,     // 3
+    RAID_INDIAN_SENIOR,     // 4
+    RAID_INDIAN_FRESHMAN,   // 5
+    RAID_INDIAN_SOPHOMORE,  // 6
+    RAID_JAYDEN,            // 7 (only Jayden)
+    RAID_INDIAN_JUNIOR,     // 8
+    RAID_INDIAN_SENIOR,     // 9
+    RAID_INDIAN_FRESHMAN,   // 10
+    RAID_INDIAN_SOPHOMORE,  // 11
+    RAID_INDIAN_JUNIOR,     // 12
+    RAID_INDIAN_SENIOR,     // 13
+    RAID_INDIAN_FRESHMAN,   // 14
+    RAID_BOSS_HAYES,        // Boss
+  ],
+  "cronin": [
+    RAID_AP_FRESHMAN,       // 1
+    RAID_AP_SOPHOMORE,      // 2
+    RAID_AP_JUNIOR,         // 3
+    RAID_AP_SENIOR,         // 4
+    RAID_BASEBALL_JOCK,     // 5
+    RAID_TEACHERS_PET,      // 6
+    RAID_AP_FRESHMAN,       // 7
+    RAID_AP_SOPHOMORE,      // 8
+    RAID_AP_JUNIOR,         // 9
+    RAID_AP_SENIOR,         // 10
+    RAID_MATTEO,            // 11 (only Matteo)
+    RAID_BASEBALL_JOCK,     // 12
+    RAID_TEACHERS_PET,      // 13
+    RAID_AP_FRESHMAN,       // 14
+    RAID_BOSS_CRONIN,       // Boss
+  ],
+  "bryant": [
+    RAID_YN_FRESHMAN,       // 1
+    RAID_YN_SOPHOMORE,      // 2
+    RAID_YN_JUNIOR,         // 3
+    RAID_YN_SENIOR,         // 4
+    RAID_YN_LEADER,         // 5
+    RAID_DEVON,             // 6 (only Devon)
+    RAID_BRYCE,             // 7
+    RAID_YN_FRESHMAN,       // 8
+    RAID_YN_SOPHOMORE,      // 9
+    RAID_BOSS_BRYANT,       // Boss 1 (transitions to Barrett at 50% HP)
+    RAID_CK3_BARRETT,       // Boss 2
+  ],
+};
