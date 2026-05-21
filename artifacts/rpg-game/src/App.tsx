@@ -1578,7 +1578,7 @@ function GameContent() {
                     transition={{ delay: 8.8, duration: 0.7 }}
                     className="text-sm font-serif text-muted-foreground/50 leading-relaxed"
                   >
-                    The raids are waiting.
+                    The raids are awaiting.
                   </motion.p>
                 </div>
               </motion.div>
