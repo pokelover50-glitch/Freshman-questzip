@@ -218,7 +218,11 @@ export function useGameEngine() {
   }, []);
 
   const beginRaid = useCallback((raidId: string) => {
-    setState((s) => ({ ...s, activeRaidId: raidId, phase: "character-select" }));
+    setState((s) => ({
+      ...s,
+      activeRaidId: raidId,
+      phase: s.selectedClass ? "intro" : "character-select",
+    }));
   }, []);
 
   const selectCharacter = useCallback((cls: CharacterClassDef) => {
@@ -263,10 +267,10 @@ export function useGameEngine() {
         phase: "encounter",
         encounterIndex: 0,
         roundIndex: 0,
+        playerHp: s.playerMaxHp,
         enemyHp: encounters[0].enemyMaxHp,
         lastOutcome: null,
         showOutcome: false,
-        inventory: [],
         pendingDrops: [],
         defeatedBosses: [],
         abilityMessage: null,
