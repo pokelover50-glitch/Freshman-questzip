@@ -334,10 +334,10 @@ function weightedPick(items: GearItemDef[]): GearItemDef | null {
 export function rollMobDrops(encounterId?: string, alwaysDropFood = false): GearItemInstance[] {
   const drops: GearItemInstance[] = [];
 
-  const roll = Math.random() * 100;
-  if (roll < 33) drops.push(makeInstance(MOB_ITEMS[0]));
-  else if (roll < 66) drops.push(makeInstance(MOB_ITEMS[1]));
-  else if (roll < 99) drops.push(makeInstance(MOB_ITEMS[2]));
+  if (MOB_ITEMS.length > 0 && Math.random() < 0.99) {
+    const item = weightedPick(MOB_ITEMS);
+    if (item) drops.push(makeInstance(item));
+  }
 
   if (alwaysDropFood || (encounterId && FOOD_DROP_MOB_IDS.has(encounterId))) {
     const food = weightedPick(FOOD_ITEMS);
