@@ -41,6 +41,7 @@ function getInitialState(
     achievements: preserve?.achievements ?? [],
     unclaimedAchievements: preserve?.unclaimedAchievements ?? [],
     equippedItemId: null,
+    defeatedByName: null,
   };
 }
 
@@ -376,7 +377,7 @@ export function useGameEngine() {
       const enemyDied = s.enemyHp <= 0;
 
       if (playerDied) {
-        return { ...s, phase: "game-over", showOutcome: false, pendingDrops: [] };
+        return { ...s, phase: "game-over", showOutcome: false, pendingDrops: [], defeatedByName: currentEncounter.enemyName };
       }
 
       if (enemyDied) {

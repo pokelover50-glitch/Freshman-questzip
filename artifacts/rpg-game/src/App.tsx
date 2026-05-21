@@ -1269,7 +1269,7 @@ function GameContent() {
                 </p>
                 <div className="inline-block mt-4 px-6 py-2 rounded-full bg-destructive/10 border border-destructive/20 text-destructive font-serif">
                   Fell in {ZONE_NAMES[state.zoneIndex]} to{" "}
-                  {currentEncounter?.enemyName}
+                  {state.defeatedByName ?? "an unknown enemy"}
                 </div>
               </div>
 

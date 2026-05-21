@@ -106,4 +106,5 @@ export interface GameState {
   achievements: string[];
   unclaimedAchievements: string[];
   equippedItemId: string | null;
+  defeatedByName: string | null;
 }
