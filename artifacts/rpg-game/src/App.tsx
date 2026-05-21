@@ -216,79 +216,127 @@ function ChestSpinner({
   }, []);
 
   const currentItem = pool[displayIdx];
+  const totalWeight = pool.reduce((s, e) => s + e.weight, 0);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
     >
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 280, damping: 26 }}
-        className="relative z-10 bg-card border border-primary/50 rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center"
+        className="relative z-10 bg-card border border-primary/50 rounded-2xl shadow-2xl w-full max-w-xl mx-auto"
       >
-        <h3 className="font-serif font-bold text-xl text-primary mb-1">Opening {chest.def.name}</h3>
-        <p className="text-xs text-muted-foreground font-serif mb-6">Spinning the contents…</p>
-
-        <div className="relative h-44 flex items-center justify-center mb-6 overflow-hidden rounded-xl border border-border bg-background/40">
-          <AnimatePresence mode="popLayout">
-            {!showResult ? (
-              <motion.div
-                key={displayIdx}
-                initial={{ y: -32, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 32, opacity: 0 }}
-                transition={{ duration: 0.12 }}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-2"
-              >
-                <span className="text-6xl">{currentItem?.item.emoji ?? "✨"}</span>
-                <p className="font-serif text-sm text-muted-foreground">{currentItem?.item.name ?? "…"}</p>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="result"
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 18 }}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-2"
-              >
-                <motion.span
-                  animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
-                  transition={{ delay: 0.1, duration: 0.5 }}
-                  className="text-7xl"
-                >
-                  {wonItem?.emoji ?? "✨"}
-                </motion.span>
-                <p className="font-serif font-bold text-lg text-primary">{wonItem?.name ?? "Unknown Item"}</p>
-                <p className="text-xs text-muted-foreground px-4 leading-relaxed">{wonItem?.description}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 text-center border-b border-border">
+          <h3 className="font-serif font-bold text-xl text-primary">{chest.def.emoji} Opening {chest.def.name}</h3>
+          <p className="text-xs text-muted-foreground font-serif mt-0.5">
+            {showResult ? "You received…" : "Spinning the contents…"}
+          </p>
         </div>
 
-        {showResult && wonItem ? (
-          <Button
-            onClick={() => onClaim(chest.instanceId, wonItem)}
-            className="w-full font-serif font-bold bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            ✨ Claim!
-          </Button>
-        ) : (
-          <div className="h-9 flex items-center justify-center gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-2 h-2 rounded-full bg-primary/60"
-                animate={{ opacity: [0.3, 1, 0.3], y: [0, -4, 0] }}
-                transition={{ duration: 0.7, delay: i * 0.15, repeat: Infinity }}
-              />
-            ))}
+        {/* Body: spinner + odds side by side */}
+        <div className="flex gap-0 divide-x divide-border">
+          {/* Spinner column */}
+          <div className="flex-1 p-5 flex flex-col items-center gap-4">
+            <div className="relative w-full h-40 flex items-center justify-center overflow-hidden rounded-xl border border-border bg-background/40">
+              <AnimatePresence mode="popLayout">
+                {!showResult ? (
+                  <motion.div
+                    key={displayIdx}
+                    initial={{ y: -32, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 32, opacity: 0 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-1.5"
+                  >
+                    <span className="text-6xl">{currentItem?.item.emoji ?? "✨"}</span>
+                    <p className="font-serif text-sm text-muted-foreground">{currentItem?.item.name ?? "…"}</p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="result"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-3"
+                  >
+                    <motion.span
+                      animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
+                      transition={{ delay: 0.1, duration: 0.5 }}
+                      className="text-6xl"
+                    >
+                      {wonItem?.emoji ?? "✨"}
+                    </motion.span>
+                    <p className="font-serif font-bold text-base text-primary leading-tight">{wonItem?.name ?? "Unknown Item"}</p>
+                    <p className="text-[11px] text-muted-foreground text-center leading-relaxed">{wonItem?.description}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {showResult && wonItem ? (
+              <Button
+                onClick={() => onClaim(chest.instanceId, wonItem)}
+                className="w-full font-serif font-bold bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                ✨ Claim!
+              </Button>
+            ) : (
+              <div className="h-9 flex items-center justify-center gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-2 h-2 rounded-full bg-primary/60"
+                    animate={{ opacity: [0.3, 1, 0.3], y: [0, -4, 0] }}
+                    transition={{ duration: 0.7, delay: i * 0.15, repeat: Infinity }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Odds column */}
+          <div className="w-44 shrink-0 p-4 flex flex-col gap-1">
+            <p className="text-[10px] font-serif font-bold uppercase tracking-widest text-muted-foreground/50 mb-2">
+              Drop Chances
+            </p>
+            {pool.map((entry, i) => {
+              const pct = Math.round((entry.weight / totalWeight) * 100);
+              const isSpinning = !showResult && i === displayIdx;
+              const isWon = showResult && wonItem?.id === entry.item.id;
+              return (
+                <motion.div
+                  key={entry.item.id}
+                  animate={isSpinning ? { scale: 1.04 } : { scale: 1 }}
+                  transition={{ duration: 0.1 }}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors text-left ${
+                    isWon
+                      ? "bg-yellow-500/20 border border-yellow-500/50"
+                      : isSpinning
+                      ? "bg-primary/15 border border-primary/40"
+                      : "border border-transparent"
+                  }`}
+                >
+                  <span className="text-base shrink-0">{entry.item.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[11px] font-serif leading-tight truncate ${isWon ? "text-yellow-300 font-bold" : isSpinning ? "text-primary font-semibold" : "text-foreground/80"}`}>
+                      {entry.item.name}
+                    </p>
+                    <p className={`text-[10px] font-mono ${isWon ? "text-yellow-400" : isSpinning ? "text-primary/80" : "text-muted-foreground/60"}`}>
+                      {pct}%
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
       </motion.div>
     </motion.div>
   );
