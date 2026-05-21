@@ -160,6 +160,11 @@ const RAID_NAMES: Record<string, string> = {
   "cronin": "Mr. Cronin's Room",
   "bryant": "Mr. Bryant's Room",
 };
+const RAID_NAMES_SHORT: Record<string, string> = {
+  "hayes": "Hayes's Room",
+  "cronin": "Cronin's Room",
+  "bryant": "Bryant's Room",
+};
 
 const pageVariants = {
   initial: { opacity: 0, scale: 0.98 },
@@ -785,7 +790,9 @@ function GameContent() {
                         {save ? (
                           <div className="mt-1">
                             <p className="text-base text-foreground font-semibold font-serif">
-                              {ZONE_NAMES_SHORT[save.zoneIndex] ?? "Zone " + (save.zoneIndex + 1)}
+                              {save.state.activeRaidId
+                                ? (RAID_NAMES_SHORT[save.state.activeRaidId] ?? "Raid")
+                                : (ZONE_NAMES_SHORT[save.zoneIndex] ?? "Zone " + (save.zoneIndex + 1))}
                               {" · "}Encounter {save.encounterIndex + 1}
                             </p>
                             <p className="text-xs text-muted-foreground/50 mt-0.5">
