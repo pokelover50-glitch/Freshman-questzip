@@ -1570,6 +1570,14 @@ function GameContent() {
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
+                    transition={{ delay: 7.6, duration: 0.7 }}
+                    className="text-sm font-serif text-muted-foreground/50 leading-relaxed pt-2"
+                  >
+                    His name echoes in your head.
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ delay: 8.8, duration: 0.7 }}
                     className="text-sm font-serif text-muted-foreground/50 leading-relaxed"
                   >
