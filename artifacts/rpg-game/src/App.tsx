@@ -1519,6 +1519,73 @@ function GameContent() {
                 </p>
               </div>
 
+              {/* Teaser hint */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
+                className="w-full max-w-2xl space-y-4 border border-primary/20 bg-primary/5 rounded-2xl px-8 py-6"
+              >
+                <div className="space-y-3 text-left">
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.8, duration: 0.7 }}
+                    className="text-sm font-serif text-muted-foreground uppercase tracking-widest"
+                  >
+                    Epilogue
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 2.4, duration: 0.7 }}
+                    className="text-base font-serif text-muted-foreground leading-relaxed"
+                  >
+                    Barrett walks away without another word. He doesn't look back.
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 3.6, duration: 0.7 }}
+                    className="text-base font-serif text-muted-foreground leading-relaxed"
+                  >
+                    Somewhere across the school, a door opens.
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 4.8, duration: 0.7 }}
+                    className="text-lg font-serif italic text-primary/80 leading-relaxed"
+                  >
+                    "You won today. But you faced a ghost — a version of me going through the motions."
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 6.2, duration: 0.7 }}
+                    className="text-lg font-serif italic text-primary/80 leading-relaxed"
+                  >
+                    "When you're ready for the real thing… you know where to find me."
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 7.6, duration: 0.7 }}
+                    className="text-sm font-serif text-muted-foreground/50 leading-relaxed pt-2"
+                  >
+                    His name echoes in your head. CK3 Barrett. The real one. The full power.
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 8.8, duration: 0.7 }}
+                    className="text-sm font-serif text-muted-foreground/50 leading-relaxed"
+                  >
+                    The raids are waiting.
+                  </motion.p>
+                </div>
+              </motion.div>
+
               <div className="space-y-6 bg-card/50 p-8 rounded-2xl border border-border/50 backdrop-blur-sm w-full max-w-md">
                 <h2 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">
                   Defeated Legends
