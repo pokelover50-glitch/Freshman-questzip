@@ -757,9 +757,19 @@ function GameContent() {
                       transition={{ delay: (slot - 1) * 0.07 }}
                       className="flex items-stretch gap-2"
                     >
-                      <button
+                      <motion.button
+                        animate={save?.state.crownTaken ? {
+                          boxShadow: [
+                            "0 0 8px -2px rgba(234,179,8,0.4), inset 0 0 0 1px rgba(234,179,8,0.35)",
+                            "0 0 22px -2px rgba(234,179,8,0.75), inset 0 0 0 1px rgba(234,179,8,0.7)",
+                            "0 0 8px -2px rgba(234,179,8,0.4), inset 0 0 0 1px rgba(234,179,8,0.35)",
+                          ],
+                        } : {}}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                         className={`flex-1 text-left rounded-xl border px-5 py-4 transition-all font-serif group ${
-                          save
+                          save?.state.crownTaken
+                            ? "border-yellow-400/50 bg-yellow-400/5 hover:bg-yellow-400/10 hover:border-yellow-400/80 cursor-pointer"
+                            : save
                             ? "border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/70 cursor-pointer"
                             : "border-border/40 bg-card/40 hover:bg-card hover:border-border cursor-pointer"
                         }`}
@@ -827,7 +837,7 @@ function GameContent() {
                         ) : (
                           <p className="mt-1 text-sm text-muted-foreground/40 italic">Empty</p>
                         )}
-                      </button>
+                      </motion.button>
 
                       {/* Delete button — only shown for occupied slots */}
                       {save && (
