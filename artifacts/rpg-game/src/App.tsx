@@ -1514,9 +1514,6 @@ function GameContent() {
                 <h1 className="text-5xl sm:text-7xl font-serif font-bold text-primary tracking-wider drop-shadow-[0_0_30px_hsl(var(--primary))]">
                   QUEST COMPLETE
                 </h1>
-                <p className="text-xl font-serif text-foreground max-w-2xl mx-auto italic bg-card/50 p-6 rounded-xl border border-border">
-                  Barrett Luke Hutchins stares at you for a long, silent moment. Then — slowly — he begins to clap. You have defeated the final boss. You are no longer just a freshman. You are LEGEND.
-                </p>
               </div>
 
               {/* Teaser hint */}
