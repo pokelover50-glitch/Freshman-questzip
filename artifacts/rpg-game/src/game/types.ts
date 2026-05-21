@@ -104,6 +104,7 @@ export interface GameState {
   abilityMessage: string | null;
   itemActionMessage: string | null;
   barrettDefeated: boolean;
+  crownTaken: boolean;
   completedRaids: string[];
   mobsDefeated: number;
   achievements: string[];

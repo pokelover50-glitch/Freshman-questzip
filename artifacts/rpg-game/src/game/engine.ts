@@ -21,7 +21,7 @@ const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
 };
 
 function getInitialState(
-  preserve?: Pick<GameState, "barrettDefeated" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked">
+  preserve?: Pick<GameState, "barrettDefeated" | "crownTaken" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked">
 ): GameState {
   return {
     phase: "title",
@@ -40,6 +40,7 @@ function getInitialState(
     abilityMessage: null,
     itemActionMessage: null,
     barrettDefeated: preserve?.barrettDefeated ?? false,
+    crownTaken: preserve?.crownTaken ?? false,
     completedRaids: preserve?.completedRaids ?? [],
     mobsDefeated: preserve?.mobsDefeated ?? 0,
     achievements: preserve?.achievements ?? [],
@@ -142,6 +143,7 @@ export function useGameEngine() {
       defeatedByName: s.defeatedByName ?? null,
       activeRaidId: s.activeRaidId ?? null,
       doomscrollerUnlocked: s.doomscrollerUnlocked ?? false,
+      crownTaken: s.crownTaken ?? false,
     }));
   }, []);
 
@@ -180,6 +182,7 @@ export function useGameEngine() {
       defeatedByName: saveData.state.defeatedByName ?? null,
       activeRaidId: saveData.state.activeRaidId ?? null,
       doomscrollerUnlocked: saveData.state.doomscrollerUnlocked ?? false,
+      crownTaken: saveData.state.crownTaken ?? false,
     };
     if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over" || loadedState.phase === "raid-complete") {
       loadedState = { ...loadedState, phase: "main-menu" };
@@ -212,6 +215,7 @@ export function useGameEngine() {
   const goToTitle = useCallback(() => {
     setState((s) => getInitialState({
       barrettDefeated: s.barrettDefeated,
+      crownTaken: s.crownTaken,
       completedRaids: s.completedRaids,
       mobsDefeated: s.mobsDefeated,
       achievements: s.achievements,
@@ -500,6 +504,7 @@ export function useGameEngine() {
           const isLastInRaid = s.encounterIndex >= raidEncounters.length - 1;
 
           if (isLastInRaid) {
+            const isCK3Barrett = s.activeRaidId === "bryant";
             return {
               ...s,
               phase: "raid-complete",
@@ -510,6 +515,7 @@ export function useGameEngine() {
               completedRaids: [...s.completedRaids, s.activeRaidId!],
               mobsDefeated: newMobsDefeated,
               unclaimedAchievements: newUnclaimedAchievements,
+              crownTaken: isCK3Barrett ? true : s.crownTaken,
             };
           }
 
