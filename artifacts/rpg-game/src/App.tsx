@@ -1589,7 +1589,7 @@ function GameContent() {
                 {state.defeatedBosses.map((boss, i) => (
                   <div key={i} className="flex items-center justify-between font-serif text-base border-b border-border/50 pb-2">
                     <span className="text-foreground">{boss}</span>
-                    <span className="text-accent text-sm">FREED</span>
+                    <span className="text-accent text-sm">DEFEATED</span>
                   </div>
                 ))}
               </div>

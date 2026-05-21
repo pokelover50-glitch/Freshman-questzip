@@ -206,38 +206,7 @@ export function rollChestDrop(chestId: string): GearItemDef | null {
   return pool[pool.length - 1].item;
 }
 
-export const MOB_ITEMS: GearItemDef[] = [
-  {
-    id: "pencil",
-    name: "Pencil",
-    emoji: "✏️",
-    description: "Deals 5 damage to the current enemy.",
-    damage: 5,
-    target: "any",
-    isFromBoss: false,
-    dropChance: 0.33,
-  },
-  {
-    id: "book",
-    name: "Book",
-    emoji: "📖",
-    description: "Deals 5 damage to the current enemy.",
-    damage: 5,
-    target: "any",
-    isFromBoss: false,
-    dropChance: 0.33,
-  },
-  {
-    id: "eraser",
-    name: "Eraser",
-    emoji: "🧼",
-    description: "Deals 5 damage to the current enemy.",
-    damage: 5,
-    target: "any",
-    isFromBoss: false,
-    dropChance: 0.33,
-  },
-];
+export const MOB_ITEMS: GearItemDef[] = [];
 
 export const FOOD_ITEMS: GearItemDef[] = [
   {
