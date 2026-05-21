@@ -82,7 +82,7 @@ function AchievementsPanel({
         </button>
       </div>
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
         {ACHIEVEMENTS.map((ach) => {
           const claimed = achievements.includes(ach.id);
           const unclaimed = unclaimedAchievements.includes(ach.id);
