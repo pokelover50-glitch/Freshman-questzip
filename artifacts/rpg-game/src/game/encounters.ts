@@ -1189,6 +1189,278 @@ const RAID_CK3_BARRETT: Encounter = {
   ],
 };
 
+// ─── TOWER OF CHOCOLATE MILK ──────────────────────────────────────────────────
+
+export const TOWER_FLOOR_SIZE = 10;
+
+function chocolateBaseMob(base: Encounter, zone2Hp: number): Encounter {
+  return {
+    ...base,
+    id: `tower-${base.id}`,
+    enemyName: `Chocolate ${base.enemyName}`,
+    enemyMaxHp: Math.round(zone2Hp * 1.25),
+    rounds: base.rounds.map((r) => ({
+      ...r,
+      choices: r.choices.map((c) => ({ ...c, playerDamage: 5 })),
+    })),
+  };
+}
+
+function chocolateRaidMob(base: Encounter): Encounter {
+  return {
+    ...base,
+    id: `tower-${base.id}`,
+    enemyName: `Chocolate ${base.enemyName}`,
+    enemyMaxHp: Math.round(base.enemyMaxHp * 1.25),
+    rounds: base.rounds.map((r) => ({
+      ...r,
+      choices: r.choices.map((c) => ({
+        ...c,
+        playerDamage: Math.round(c.playerDamage * 1.25),
+      })),
+    })),
+  };
+}
+
+const CHOC_MOB_LIST: Encounter[] = [
+  chocolateBaseMob(MOB_ENCOUNTERS[0], ZONE_2_HP[0]),
+  chocolateBaseMob(MOB_ENCOUNTERS[1], ZONE_2_HP[1]),
+  chocolateBaseMob(MOB_ENCOUNTERS[2], ZONE_2_HP[2]),
+  chocolateBaseMob(MOB_ENCOUNTERS[3], ZONE_2_HP[3]),
+  chocolateBaseMob(MOB_ENCOUNTERS[4], ZONE_2_HP[4]),
+  chocolateRaidMob(RAID_INDIAN_FRESHMAN),
+  chocolateRaidMob(RAID_INDIAN_SOPHOMORE),
+  chocolateRaidMob(RAID_INDIAN_JUNIOR),
+  chocolateRaidMob(RAID_INDIAN_SENIOR),
+  chocolateRaidMob(RAID_AP_FRESHMAN),
+  chocolateRaidMob(RAID_AP_SOPHOMORE),
+  chocolateRaidMob(RAID_AP_JUNIOR),
+  chocolateRaidMob(RAID_AP_SENIOR),
+  chocolateRaidMob(RAID_BASEBALL_JOCK),
+  chocolateRaidMob(RAID_TEACHERS_PET),
+  chocolateRaidMob(RAID_YN_FRESHMAN),
+  chocolateRaidMob(RAID_YN_SOPHOMORE),
+  chocolateRaidMob(RAID_YN_JUNIOR),
+  chocolateRaidMob(RAID_YN_SENIOR),
+  chocolateRaidMob(RAID_YN_LEADER),
+];
+
+function buildTowerFloor(start: number): Encounter[] {
+  const list: Encounter[] = [];
+  for (let i = 0; i < 9; i++) {
+    list.push(CHOC_MOB_LIST[(start + i) % CHOC_MOB_LIST.length]);
+  }
+  return list;
+}
+
+const TOWER_BOSS_1: Encounter = {
+  id: "tower-boss-sterlin",
+  enemyName: "Sterlin Stover",
+  enemyEmoji: "🏛️",
+  enemyMaxHp: 500,
+  isBoss: true,
+  victoryText: "Sterlin staggers back. 'Fifteen years... and you're the first.' He steps aside. Floor 1 is clear.",
+  defeatText: "Sterlin doesn't even flinch. 'The tower claims another.' You retreat.",
+  rounds: [
+    {
+      situation: "Sterlin Stover blocks the tower entrance, arms crossed. He's been here for fifteen years and no one has passed.",
+      question: "Sterlin: \"The tower is closed. Turn around, freshman.\"",
+      choices: [
+        { text: "\"Make me.\"", playerDamage: 15, enemyDamage: 120, healAmount: 0, narrative: "Two words. Sterlin expected fear. He didn't get it." },
+        { text: "\"Fifteen years at the same door. Don't you want to know what's up there?\"", playerDamage: 15, enemyDamage: 150, healAmount: 0, narrative: "The existential jab lands harder than any fist. Sterlin flinches." },
+        { text: "\"I know what's up there. I'm going through.\"", playerDamage: 15, enemyDamage: 130, healAmount: 0, narrative: "Pure certainty. He wasn't prepared for someone who already knows." },
+        { text: "Back down respectfully.", playerDamage: 40, enemyDamage: 0, healAmount: 0, narrative: "He expected this. The tower expects more.", badChoice: true },
+      ],
+    },
+    {
+      situation: "Sterlin is breathing harder. He didn't expect this.",
+      question: "\"You don't know what the milk does to people. Last warning.\"",
+      choices: [
+        { text: "\"Then I'll find out.\"", playerDamage: 15, enemyDamage: 170, healAmount: 0, narrative: "No hesitation. Sterlin realizes nothing he says will stop you." },
+        { text: "\"I've already changed. The milk can't touch me.\"", playerDamage: 15, enemyDamage: 180, healAmount: 0, narrative: "The admission of growth breaks through his last defense." },
+        { text: "\"Stand aside, Sterlin.\"", playerDamage: 15, enemyDamage: 200, healAmount: 0, narrative: "Using his name quietly is the most powerful thing you could do." },
+        { text: "Ask him what the milk actually does.", playerDamage: 35, enemyDamage: 20, healAmount: 0, narrative: "You hesitate. He uses it. The tower demands conviction.", badChoice: true },
+      ],
+    },
+  ],
+};
+
+const TOWER_BOSS_2: Encounter = {
+  id: "tower-boss-corrupted-freshman",
+  enemyName: "Corrupted Freshman",
+  enemyEmoji: "🥛",
+  enemyMaxHp: 1000,
+  isBoss: true,
+  victoryText: "The Corrupted Freshman collapses. A single tear runs down a chocolate-stained cheek. Floor 2 is yours.",
+  defeatText: "The milk calls to you. The Corrupted Freshman smiles. 'You'll join us soon.'",
+  rounds: [
+    {
+      situation: "The Corrupted Freshman was like you once. Now their eyes are brown and glazed. They smell of chocolate.",
+      question: "\"Join us. Drink the milk. You'll finally belong here.\"",
+      choices: [
+        { text: "\"I already belong here. I don't need it.\"", playerDamage: 25, enemyDamage: 280, healAmount: 0, narrative: "The self-possession cracks their conditioning. They stagger." },
+        { text: "Charge without a word.", playerDamage: 25, enemyDamage: 250, healAmount: 0, narrative: "Action over argument. The Freshman didn't expect a fighter, only a drinker." },
+        { text: "\"What did you give up to get here?\"", playerDamage: 25, enemyDamage: 310, healAmount: 0, narrative: "The question pierces through the milk-haze. Grief flickers in their eyes." },
+        { text: "\"Maybe just a sip...\"", playerDamage: 60, enemyDamage: 0, healAmount: 0, narrative: "You hesitate. The milk calls louder. This is how it starts.", badChoice: true },
+      ],
+    },
+    {
+      situation: "The Corrupted Freshman is slowing down. The milk is fighting you through them.",
+      question: "\"Why resist? Everyone on this floor gave in. It's easier.\"",
+      choices: [
+        { text: "\"Easy isn't the point.\"", playerDamage: 25, enemyDamage: 350, healAmount: 0, narrative: "Simple and devastating. The Freshman has no answer for that." },
+        { text: "\"Easier for who — you or the milk?\"", playerDamage: 25, enemyDamage: 380, healAmount: 0, narrative: "The distinction hits. They blink like they're waking up." },
+        { text: "\"I'm here to end this. For you too.\"", playerDamage: 25, enemyDamage: 400, healAmount: 5, narrative: "Fighting FOR them breaks the milk's grip just enough." },
+        { text: "Hesitate and apologize.", playerDamage: 50, enemyDamage: 50, healAmount: 0, narrative: "Compassion without resolve. The milk rushes back in.", badChoice: true },
+      ],
+    },
+  ],
+};
+
+const TOWER_BOSS_3: Encounter = {
+  id: "tower-boss-marcello",
+  enemyName: "Marcello",
+  enemyEmoji: "🌀",
+  enemyMaxHp: 2500,
+  isBoss: true,
+  victoryText: "Marcello dissolves into chocolate vapor. 'Impressive,' the vapor whispers. 'But the Creator remains.' Floor 3 is cleared.",
+  defeatText: "Marcello smiles. 'The tower always wins.' You are forced back.",
+  rounds: [
+    {
+      situation: "Marcello materializes from swirling chocolate mist. He moves like the tower itself.",
+      question: "Marcello: \"Three floors. You've done well. Not well enough.\"",
+      choices: [
+        { text: "\"Two more floors says otherwise.\"", playerDamage: 30, enemyDamage: 620, healAmount: 0, narrative: "The mathematical confidence shuts Marcello up. He recalculates." },
+        { text: "\"I'm not done.\"", playerDamage: 30, enemyDamage: 580, healAmount: 0, narrative: "Three words, absolute. Marcello has never fought someone who's just not done." },
+        { text: "\"Who sent you?\"", playerDamage: 30, enemyDamage: 700, healAmount: 0, narrative: "The question implies you know things you don't. Marcello freezes." },
+        { text: "Act intimidated.", playerDamage: 65, enemyDamage: 100, healAmount: 0, narrative: "He expected this. He's disappointed. So is the tower.", badChoice: true },
+      ],
+    },
+    {
+      situation: "Marcello shifts form. The chocolate mist thickens around him.",
+      question: "\"You fight for nothing. The Creator made this place. You can't unmake it.\"",
+      choices: [
+        { text: "\"Watch me.\"", playerDamage: 30, enemyDamage: 750, healAmount: 0, narrative: "Not a threat. A fact. Marcello's form flickers." },
+        { text: "\"The Creator made it. I'm going to break it.\"", playerDamage: 30, enemyDamage: 800, healAmount: 0, narrative: "The directness paralyzes him. He hadn't considered someone who just says it plainly." },
+        { text: "\"Whatever this place is, it ends today.\"", playerDamage: 30, enemyDamage: 780, healAmount: 0, narrative: "The finality in your voice reverberates through the tower walls." },
+        { text: "\"The Creator sounds scared if they need all this.\"", playerDamage: 30, enemyDamage: 820, healAmount: 5, narrative: "The implication is devastating. Marcello can't defend the Creator's fear." },
+      ],
+    },
+    {
+      situation: "Marcello is nearly gone. The chocolate mist is fading.",
+      question: "\"At the top... it will consume you. I'm the last mercy you'll receive.\"",
+      choices: [
+        { text: "\"I don't need mercy. I need a clear path.\"", playerDamage: 30, enemyDamage: 900, healAmount: 0, narrative: "The refusal is clean and final. Marcello dissolves." },
+        { text: "\"Then thank you, and step aside.\"", playerDamage: 30, enemyDamage: 850, healAmount: 5, narrative: "Taking his mercy and using it against him. Perfect." },
+        { text: "\"You're not mercy. You're just another obstacle.\"", playerDamage: 30, enemyDamage: 950, healAmount: 0, narrative: "Maximum damage. Marcello's form shatters completely." },
+        { text: "Consider turning back.", playerDamage: 65, enemyDamage: 100, healAmount: 0, narrative: "One moment of doubt costs everything. The tower feeds on hesitation.", badChoice: true },
+      ],
+    },
+  ],
+};
+
+const TOWER_BOSS_4: Encounter = {
+  id: "tower-boss-lunch-lady",
+  enemyName: "The Lunch Lady",
+  enemyEmoji: "🍫",
+  enemyMaxHp: 4000,
+  isBoss: true,
+  victoryText: "The Lunch Lady drops her ladle. 'I've been serving this for thirty years,' she whispers. 'Maybe it's time to stop.' Floor 4 is clear.",
+  defeatText: "The Lunch Lady sighs. 'Drink your milk, dear.' You are overwhelmed.",
+  rounds: [
+    {
+      situation: "The Lunch Lady stands before a massive vat of chocolate milk. She's been here longer than the tower itself.",
+      question: "\"Sweetie, this isn't for you. Go back to class.\"",
+      choices: [
+        { text: "\"This ends with you, doesn't it?\"", playerDamage: 35, enemyDamage: 900, healAmount: 0, narrative: "The direct accusation hits. She grips her ladle tighter." },
+        { text: "\"Who told you to keep making it?\"", playerDamage: 35, enemyDamage: 950, healAmount: 0, narrative: "She hesitates. No one's ever asked her that. The question stings." },
+        { text: "\"I'm not here for lunch. I'm here to finish this.\"", playerDamage: 35, enemyDamage: 880, healAmount: 0, narrative: "She understands now. The ladle rises." },
+        { text: "\"Can I have some?\"", playerDamage: 80, enemyDamage: 0, healAmount: 0, narrative: "She smiles warmly and gives you a cup. The milk burns. You deserved that.", badChoice: true },
+      ],
+    },
+    {
+      situation: "The Lunch Lady's ladle crackles with chocolate energy. She's more powerful than anyone in this tower.",
+      question: "\"I've watched students come and go for thirty years. None of them made it this far.\"",
+      choices: [
+        { text: "\"Then I'm different.\"", playerDamage: 35, enemyDamage: 1000, healAmount: 0, narrative: "Said without arrogance. Just fact. She wobbles." },
+        { text: "\"What happened to the ones who didn't make it?\"", playerDamage: 35, enemyDamage: 1100, healAmount: 0, narrative: "The question shakes her. She knows the answer. She doesn't like it." },
+        { text: "\"You've been protecting the Creator this whole time.\"", playerDamage: 35, enemyDamage: 1050, healAmount: 5, narrative: "The realization that she's been a shield, not a guardian, breaks something in her." },
+        { text: "\"Can we work something out?\"", playerDamage: 80, enemyDamage: 100, healAmount: 0, narrative: "She respects the diplomacy, then hits you with the ladle anyway.", badChoice: true },
+      ],
+    },
+    {
+      situation: "The Lunch Lady is slowing. The chocolate vat bubbles without direction.",
+      question: "\"If I stop... what happens to all of this?\"",
+      choices: [
+        { text: "\"It ends. That's the point.\"", playerDamage: 35, enemyDamage: 1200, healAmount: 0, narrative: "Clean finality. She needed someone to say it plainly." },
+        { text: "\"Something better takes its place.\"", playerDamage: 35, enemyDamage: 1100, healAmount: 8, narrative: "Hope hits harder than anything. She stops fighting." },
+        { text: "\"You stop serving someone who never deserved it.\"", playerDamage: 35, enemyDamage: 1300, healAmount: 0, narrative: "Maximum damage. Thirty years of loyalty weaponized against the one who wasted it." },
+        { text: "Tell her she did a good job.", playerDamage: 70, enemyDamage: 200, healAmount: 0, narrative: "She appreciates it. Still hits you though.", badChoice: true },
+      ],
+    },
+  ],
+};
+
+const TOWER_BOSS_5: Encounter = {
+  id: "tower-boss-creator",
+  enemyName: "Creator of Chocolate Milk",
+  enemyEmoji: "🌑",
+  enemyMaxHp: 8000,
+  isBoss: true,
+  victoryText: "The Creator dissolves into nothing. The Tower of Chocolate Milk begins to crumble. You stand in the silence of something no one has ever done before. The tower is crushed.",
+  defeatText: "The Creator smiles. 'You were the closest yet.' The darkness closes in.",
+  rounds: [
+    {
+      situation: "The Creator of Chocolate Milk materializes at the top of the tower. Ancient. Vast. Smelling faintly of chocolate.",
+      question: "Creator: \"You destroyed my guardians. You climbed my tower. And for what, little freshman?\"",
+      choices: [
+        { text: "\"To end this.\"", playerDamage: 50, enemyDamage: 1800, healAmount: 0, narrative: "The simplicity is more powerful than any speech. The Creator pauses." },
+        { text: "\"Because no one else was going to.\"", playerDamage: 50, enemyDamage: 2000, healAmount: 0, narrative: "The weight of responsibility in those words shakes the tower foundations." },
+        { text: "\"You'll know when it's over.\"", playerDamage: 50, enemyDamage: 1900, healAmount: 0, narrative: "Refusal to explain yourself. The Creator finds this deeply unsettling." },
+        { text: "Ask why they created the chocolate milk.", playerDamage: 100, enemyDamage: 200, healAmount: 0, narrative: "They launch into a monologue. You regret asking.", badChoice: true },
+      ],
+    },
+    {
+      situation: "The Creator expands, filling the room with darkness and the scent of cocoa.",
+      question: "\"I have existed since the first cafeteria. You are a freshman. Do you understand the difference?\"",
+      choices: [
+        { text: "\"All I understand is that you lose today.\"", playerDamage: 50, enemyDamage: 2100, healAmount: 0, narrative: "Ignoring the scale of what they are. Nothing could insult them more." },
+        { text: "\"Freshman means beginning. You're an ending.\"", playerDamage: 50, enemyDamage: 2300, healAmount: 0, narrative: "The poetic reversal strikes deep. The Creator recoils." },
+        { text: "\"The difference is I'm here and you're about to not be.\"", playerDamage: 50, enemyDamage: 2200, healAmount: 0, narrative: "Cold logic. The Creator has no counter." },
+        { text: "\"...Yes?\"", playerDamage: 100, enemyDamage: 0, healAmount: 0, narrative: "Wrong answer. The Creator gains confidence.", badChoice: true },
+      ],
+    },
+    {
+      situation: "The Creator is weakening. The chocolate milk falls still. The tower trembles.",
+      question: "\"I corrupted hundreds. Broke thousands. What makes you think you can stop something that vast?\"",
+      choices: [
+        { text: "\"I already have.\"", playerDamage: 50, enemyDamage: 2400, healAmount: 0, narrative: "Past tense. As if it's already done. The Creator's form cracks." },
+        { text: "\"The ones you broke sent me.\"", playerDamage: 50, enemyDamage: 2600, healAmount: 0, narrative: "Every person the milk took speaks through you. The Creator cannot withstand that weight." },
+        { text: "\"One person at a time. Starting with you.\"", playerDamage: 50, enemyDamage: 2500, healAmount: 5, narrative: "The scope reduced to the personal. The Creator has never been treated as just one problem." },
+        { text: "Doubt yourself for a moment.", playerDamage: 100, enemyDamage: 500, healAmount: 0, narrative: "One crack is all it needs. The darkness floods in.", badChoice: true },
+      ],
+    },
+    {
+      situation: "The Creator is nearly gone. The tower shakes around you. This is the final moment.",
+      question: "\"If you destroy me... you destroy everything I made. All of it. Are you prepared for that?\"",
+      choices: [
+        { text: "\"Yes.\"", playerDamage: 50, enemyDamage: 3000, healAmount: 0, narrative: "One word. The most powerful answer to the most important question. The Creator shatters." },
+        { text: "\"Everything you made was already broken.\"", playerDamage: 50, enemyDamage: 2800, healAmount: 5, narrative: "The truth delivered gently. It lands like a mountain." },
+        { text: "\"I was prepared the moment I walked into this tower.\"", playerDamage: 50, enemyDamage: 2900, healAmount: 0, narrative: "The preparation was the answer. The Creator finally understands who you are." },
+        { text: "Hesitate.", playerDamage: 100, enemyDamage: 800, healAmount: 0, narrative: "One second of doubt. The Creator drinks it in. You almost lost everything.", badChoice: true },
+      ],
+    },
+  ],
+};
+
+const TOWER_ENCOUNTERS: Encounter[] = [
+  ...buildTowerFloor(0),  TOWER_BOSS_1,
+  ...buildTowerFloor(9),  TOWER_BOSS_2,
+  ...buildTowerFloor(18), TOWER_BOSS_3,
+  ...buildTowerFloor(7),  TOWER_BOSS_4,
+  ...buildTowerFloor(16), TOWER_BOSS_5,
+];
+
 // ─── RAID ENCOUNTER ARRAYS ────────────────────────────────────────────────────
 
 export const RAID_ENCOUNTERS: Record<string, Encounter[]> = {
@@ -1239,4 +1511,5 @@ export const RAID_ENCOUNTERS: Record<string, Encounter[]> = {
     RAID_BOSS_BRYANT,       // Boss 1 (transitions to Barrett at 50% HP)
     RAID_CK3_BARRETT,       // Boss 2
   ],
+  "tower": TOWER_ENCOUNTERS,
 };

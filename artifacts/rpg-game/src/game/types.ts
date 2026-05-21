@@ -30,6 +30,7 @@ export type ChoiceOutcome = {
   enemyDamage: number;
   healAmount: number;
   narrative: string;
+  badChoice?: boolean;
 };
 
 export type ItemTarget = "any" | "mob-only" | "non-barrett" | "barrett-only";
@@ -86,7 +87,8 @@ export type GamePhase =
   | "victory"
   | "raid-complete"
   | "game-over"
-  | "ck3-cutscene";
+  | "ck3-cutscene"
+  | "tower-select";
 
 export interface GameState {
   phase: GamePhase;
@@ -115,4 +117,5 @@ export interface GameState {
   defeatedByName: string | null;
   activeRaidId: string | null;
   doomscrollerUnlocked: boolean;
+  towerCrushed: boolean;
 }

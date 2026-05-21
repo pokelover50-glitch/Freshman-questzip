@@ -41,6 +41,22 @@ const ACHIEVEMENTS = [
     secret: false,
   },
   {
+    id: "free-cronin",
+    title: "Free Mr. Cronin",
+    description: "Defeat Captured Mr. Cronin in Raid II and break his captors' hold.",
+    goal: 1,
+    reward: "🔮 Silver Chest",
+    secret: false,
+  },
+  {
+    id: "free-bryant",
+    title: "Free Mr. Bryant",
+    description: "Defeat Captured Mr. Bryant in Raid III and expose the true threat behind him.",
+    goal: 1,
+    reward: "🔮 Silver Chest",
+    secret: false,
+  },
+  {
     id: "matteo-phone",
     title: "???",
     description: "Defeat a specific enemy while holding a specific item. The right combination unlocks something hidden.",
@@ -159,11 +175,13 @@ const RAID_NAMES: Record<string, string> = {
   "hayes": "Mr. Hayes's Room",
   "cronin": "Mr. Cronin's Room",
   "bryant": "Mr. Bryant's Room",
+  "tower": "Tower of Chocolate Milk",
 };
 const RAID_NAMES_SHORT: Record<string, string> = {
   "hayes": "Hayes's Room",
   "cronin": "Cronin's Room",
   "bryant": "Bryant's Room",
+  "tower": "Tower",
 };
 
 const pageVariants = {
@@ -764,11 +782,19 @@ function GameContent() {
                             "0 0 22px -2px rgba(234,179,8,0.75), inset 0 0 0 1px rgba(234,179,8,0.7)",
                             "0 0 8px -2px rgba(234,179,8,0.4), inset 0 0 0 1px rgba(234,179,8,0.35)",
                           ],
+                        } : save?.state.towerCrushed ? {
+                          boxShadow: [
+                            "0 0 8px -2px rgba(139,92,246,0.4), inset 0 0 0 1px rgba(139,92,246,0.35)",
+                            "0 0 22px -2px rgba(139,92,246,0.75), inset 0 0 0 1px rgba(139,92,246,0.7)",
+                            "0 0 8px -2px rgba(139,92,246,0.4), inset 0 0 0 1px rgba(139,92,246,0.35)",
+                          ],
                         } : {}}
                         transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                         className={`flex-1 text-left rounded-xl border px-5 py-4 transition-all font-serif group ${
                           save?.state.crownTaken
                             ? "border-yellow-400/50 bg-yellow-400/5 hover:bg-yellow-400/10 hover:border-yellow-400/80 cursor-pointer"
+                            : save?.state.towerCrushed
+                            ? "border-purple-500/50 bg-purple-500/5 hover:bg-purple-500/10 hover:border-purple-400/80 cursor-pointer"
                             : save
                             ? "border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/70 cursor-pointer"
                             : "border-border/40 bg-card/40 hover:bg-card hover:border-border cursor-pointer"
@@ -800,20 +826,26 @@ function GameContent() {
                         {save ? (
                           <div className="mt-1">
                             <p className="text-base text-foreground font-semibold font-serif">
-                              {save.state.activeRaidId
-                                ? (RAID_NAMES_SHORT[save.state.activeRaidId] ?? "Raid")
-                                : (ZONE_NAMES_SHORT[save.zoneIndex] ?? "Zone " + (save.zoneIndex + 1))}
-                              {" · "}Encounter {save.encounterIndex + 1}
+                              {save.state.activeRaidId === "tower"
+                                ? `Tower — Floor ${Math.floor(save.encounterIndex / 10) + 1}`
+                                : save.state.activeRaidId
+                                ? (RAID_NAMES_SHORT[save.state.activeRaidId] ?? "Raid") + ` · Encounter ${save.encounterIndex + 1}`
+                                : (ZONE_NAMES_SHORT[save.zoneIndex] ?? "Zone " + (save.zoneIndex + 1)) + ` · Encounter ${save.encounterIndex + 1}`}
                             </p>
                             <p className="text-xs text-muted-foreground/50 mt-0.5">
                               Saved {formatSaveDate(save.savedAt)}
                             </p>
                             {/* Raid completion badges */}
-                            {(save.state.completedRaids?.length > 0 || save.state.crownTaken) && (
+                            {(save.state.completedRaids?.length > 0 || save.state.crownTaken || save.state.towerCrushed) && (
                               <div className="flex flex-wrap gap-1.5 mt-2">
                                 {save.state.crownTaken && (
                                   <span className="inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full bg-yellow-400/15 border border-yellow-400/40 text-yellow-300/90">
                                     👑 Crown Taken
+                                  </span>
+                                )}
+                                {save.state.towerCrushed && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/40 text-purple-300/90">
+                                    🥛 Tower Crushed
                                   </span>
                                 )}
                                 {save.state.completedRaids?.includes("hayes") && (
@@ -961,6 +993,34 @@ function GameContent() {
                     </p>
                   )}
                 </div>
+
+                {state.completedRaids.includes("hayes") && (
+                  <div className="relative">
+                    <motion.div
+                      animate={{
+                        boxShadow: [
+                          "0 0 8px -2px rgba(139,92,246,0.3)",
+                          "0 0 22px -2px rgba(139,92,246,0.65)",
+                          "0 0 8px -2px rgba(139,92,246,0.3)",
+                        ],
+                      }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                      className="rounded-xl"
+                    >
+                      <Button
+                        size="lg"
+                        className="w-full py-8 text-xl font-serif bg-card border border-purple-500/40 hover:border-purple-400/80 hover:bg-purple-500/10 text-purple-300 transition-all"
+                        onClick={() => game.beginRaid("tower")}
+                        data-testid="button-tower"
+                      >
+                        🥛 Tower of Chocolate Milk
+                      </Button>
+                    </motion.div>
+                    <p className="mt-2 text-xs font-serif text-purple-400/60 italic text-center">
+                      50 encounters · 5 floors · 5 bosses
+                    </p>
+                  </div>
+                )}
               </div>
 
               <button
@@ -1144,7 +1204,9 @@ function GameContent() {
                 <CardHeader className="text-center border-b border-border/50 pb-6">
                   <div className="text-5xl mb-2">{state.selectedClass.emoji}</div>
                   <CardTitle className="font-serif text-3xl">
-                    {state.activeRaidId
+                    {state.activeRaidId === "tower"
+                      ? "Tower of Chocolate Milk"
+                      : state.activeRaidId
                       ? state.activeRaidId === "hayes" ? "Mr. Hayes's Room"
                         : state.activeRaidId === "cronin" ? "Mr. Cronin's Room"
                         : "Mr. Bryant's Room"
@@ -1152,7 +1214,40 @@ function GameContent() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6 text-lg leading-relaxed text-muted-foreground">
-                  {state.activeRaidId ? (
+                  {state.activeRaidId === "tower" ? (
+                    <>
+                      <p>
+                        Before you rises a structure that has no right to exist inside a school — the{" "}
+                        <span className="text-purple-300 font-semibold">Tower of Chocolate Milk</span>.
+                        It smells faintly of cocoa. Everyone who has entered has either never returned, or returned changed.
+                      </p>
+                      <p>
+                        Five floors. Five bosses. Fifty enemies stand between you and the Creator. There are no checkpoints.{" "}
+                        <span className="text-destructive font-semibold">Death means starting over from Floor 1.</span>
+                      </p>
+                      <div className="pt-4 space-y-2">
+                        <h3 className="text-primary font-serif font-bold uppercase tracking-wider text-sm">
+                          Tower Details
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className="text-sm py-1 border-purple-500/30 bg-purple-500/5 text-purple-300 font-serif">5 Floors</Badge>
+                          <Badge variant="outline" className="text-sm py-1 border-primary/30 bg-primary/5 font-serif">45 chocolate enemies</Badge>
+                          <Badge variant="outline" className="text-sm py-1 border-destructive/30 bg-destructive/5 font-serif">5 bosses</Badge>
+                          <Badge variant="outline" className="text-sm py-1 border-red-500/30 bg-red-500/5 text-red-400 font-serif">Final: Creator of Chocolate Milk 🌑</Badge>
+                        </div>
+                      </div>
+                      <div className="pt-6 flex justify-center">
+                        <Button
+                          size="lg"
+                          onClick={game.startRaid}
+                          className="font-serif text-lg px-8 bg-purple-600 hover:bg-purple-500 text-white"
+                          data-testid="button-enter-raid"
+                        >
+                          Enter the Tower
+                        </Button>
+                      </div>
+                    </>
+                  ) : state.activeRaidId ? (
                     <>
                       <p>
                         You enter{" "}
@@ -1319,8 +1414,11 @@ function GameContent() {
                   )}
                   <div className="col-span-2 flex items-center justify-center gap-3">
                     <span className="text-xs font-serif tracking-widest text-primary/70 uppercase">
-                      {state.activeRaidId ? (RAID_NAMES[state.activeRaidId] ?? "Raid") : ZONE_NAMES[state.zoneIndex]} — Encounter{" "}
-                      {state.encounterIndex + 1}
+                      {state.activeRaidId === "tower"
+                        ? `Tower of Chocolate Milk — Floor ${Math.floor(state.encounterIndex / 10) + 1} · ${state.encounterIndex % 10 + 1}/10`
+                        : state.activeRaidId
+                        ? `${RAID_NAMES[state.activeRaidId] ?? "Raid"} — Encounter ${state.encounterIndex + 1}`
+                        : `${ZONE_NAMES[state.zoneIndex]} — Encounter ${state.encounterIndex + 1}`}
                     </span>
                     <AnimatePresence>
                       {showSavedBadge && (
@@ -1680,12 +1778,16 @@ function GameContent() {
               className="flex flex-col items-center text-center space-y-10 py-12"
             >
               <div className="space-y-4">
-                <div className="text-6xl mb-2">⚔️</div>
-                <h1 className="text-5xl sm:text-6xl font-serif font-bold text-primary tracking-wider drop-shadow-[0_0_30px_hsl(var(--primary))]">
-                  RAID COMPLETE
+                <div className="text-6xl mb-2">
+                  {state.activeRaidId === "tower" ? "🥛" : "⚔️"}
+                </div>
+                <h1 className={`text-5xl sm:text-6xl font-serif font-bold tracking-wider drop-shadow-[0_0_30px_hsl(var(--primary))] ${state.activeRaidId === "tower" ? "text-purple-300" : "text-primary"}`}>
+                  {state.activeRaidId === "tower" ? "TOWER CRUSHED" : "RAID COMPLETE"}
                 </h1>
                 <p className="text-xl font-serif text-foreground max-w-2xl mx-auto italic bg-card/50 p-6 rounded-xl border border-border">
-                  {state.activeRaidId === "hayes"
+                  {state.activeRaidId === "tower"
+                    ? "The Creator of Chocolate Milk dissolves into nothing. The tower crumbles. You stand in the silence of something no one has ever done before. The tower is crushed."
+                    : state.activeRaidId === "hayes"
                     ? "Mr. Hayes is free. The room is yours. The students scatter. Hayes nods once — respect earned."
                     : state.activeRaidId === "cronin"
                     ? "Mr. Cronin adjusts his tie, takes a breath, and writes your name on the board. Not as a detention. As an example."
@@ -1695,7 +1797,9 @@ function GameContent() {
 
               {state.pendingDrops.length > 0 && (
                 <div className="space-y-3 w-full max-w-sm">
-                  <h2 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">Raid Loot</h2>
+                  <h2 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">
+                    {state.activeRaidId === "tower" ? "Final Boss Loot" : "Raid Loot"}
+                  </h2>
                   {state.pendingDrops.map((drop) => (
                     <div key={drop.instanceId} className="flex items-center gap-3 bg-card/60 border border-border rounded-lg px-4 py-2">
                       <span className="text-2xl">{drop.def.emoji}</span>
@@ -1716,14 +1820,25 @@ function GameContent() {
               </div>
 
               <div className="flex flex-col gap-4 w-full max-w-sm">
-                <Button
-                  size="lg"
-                  className="text-lg px-8 py-6 font-serif bg-primary hover:bg-primary/90 text-primary-foreground"
-                  onClick={game.goToRaidSelect}
-                  data-testid="button-back-raid-select"
-                >
-                  Back to Raids
-                </Button>
+                {state.activeRaidId === "tower" ? (
+                  <Button
+                    size="lg"
+                    className="text-lg px-8 py-6 font-serif bg-purple-600 hover:bg-purple-500 text-white"
+                    onClick={game.goToMainMenu}
+                    data-testid="button-back-raid-select"
+                  >
+                    Return to Main Menu
+                  </Button>
+                ) : (
+                  <Button
+                    size="lg"
+                    className="text-lg px-8 py-6 font-serif bg-primary hover:bg-primary/90 text-primary-foreground"
+                    onClick={game.goToRaidSelect}
+                    data-testid="button-back-raid-select"
+                  >
+                    Back to Raids
+                  </Button>
+                )}
                 <Button
                   size="lg"
                   variant="outline"
@@ -1755,9 +1870,15 @@ function GameContent() {
                   {currentEncounter?.defeatText ?? "Your journey ends here."}
                 </p>
                 <div className="inline-block mt-4 px-6 py-2 rounded-full bg-destructive/10 border border-destructive/20 text-destructive font-serif">
-                  Fell in {state.activeRaidId ? (RAID_NAMES[state.activeRaidId] ?? "a Raid") : ZONE_NAMES[state.zoneIndex]} to{" "}
-                  {state.defeatedByName ?? "an unknown enemy"}
+                  {state.activeRaidId === "tower"
+                    ? `Fell on Floor ${Math.floor(state.encounterIndex / 10) + 1} of the Tower to ${state.defeatedByName ?? "an unknown enemy"}`
+                    : `Fell in ${state.activeRaidId ? (RAID_NAMES[state.activeRaidId] ?? "a Raid") : ZONE_NAMES[state.zoneIndex]} to ${state.defeatedByName ?? "an unknown enemy"}`}
                 </div>
+                {state.activeRaidId === "tower" && (
+                  <p className="text-sm font-serif text-muted-foreground/60 italic">
+                    The tower cannot be resumed. You will start from Floor 1.
+                  </p>
+                )}
               </div>
 
               <Button
@@ -1767,7 +1888,7 @@ function GameContent() {
                 onClick={game.goToTitle}
                 data-testid="button-try-again"
               >
-                Try Again
+                {state.activeRaidId === "tower" ? "Leave Tower" : "Try Again"}
               </Button>
             </motion.div>
           )}

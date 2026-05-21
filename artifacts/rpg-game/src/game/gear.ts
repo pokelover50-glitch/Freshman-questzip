@@ -371,3 +371,10 @@ export function rollDoomscrollerChest(): GearItemInstance {
   const chest = Math.random() < 0.7 ? CHEST_ITEMS[1] : CHEST_ITEMS[2];
   return makeInstance(chest);
 }
+
+export function rollTowerBossDrops(): GearItemInstance[] {
+  const chest = Math.random() < 0.5 ? CHEST_ITEMS[1] : CHEST_ITEMS[2];
+  const drops = [makeInstance(chest)];
+  if (Math.random() < 0.5) drops.push(makeInstance(ARMOR_CHEST));
+  return drops;
+}

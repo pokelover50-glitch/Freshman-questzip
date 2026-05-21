@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItemInstance } from "./types";
 import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS } from "./encounters";
-import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS } from "./gear";
+import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollTowerBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS } from "./gear";
 
 import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, type SaveData, type SaveSlot } from "./saveLoad";
 
@@ -18,10 +18,18 @@ const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
     instanceId: `silver-chest-claim-${Math.random().toString(36).slice(2, 9)}`,
     def: CHEST_ITEMS.find((c) => c.id === "silver-chest")!,
   }),
+  "free-cronin": () => ({
+    instanceId: `silver-chest-cronin-${Math.random().toString(36).slice(2, 9)}`,
+    def: CHEST_ITEMS.find((c) => c.id === "silver-chest")!,
+  }),
+  "free-bryant": () => ({
+    instanceId: `silver-chest-bryant-${Math.random().toString(36).slice(2, 9)}`,
+    def: CHEST_ITEMS.find((c) => c.id === "silver-chest")!,
+  }),
 };
 
 function getInitialState(
-  preserve?: Pick<GameState, "barrettDefeated" | "crownTaken" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked">
+  preserve?: Pick<GameState, "barrettDefeated" | "crownTaken" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked" | "towerCrushed">
 ): GameState {
   return {
     phase: "title",
@@ -50,6 +58,7 @@ function getInitialState(
     defeatedByName: null,
     activeRaidId: null,
     doomscrollerUnlocked: preserve?.doomscrollerUnlocked ?? false,
+    towerCrushed: preserve?.towerCrushed ?? false,
   };
 }
 
@@ -144,6 +153,7 @@ export function useGameEngine() {
       activeRaidId: s.activeRaidId ?? null,
       doomscrollerUnlocked: s.doomscrollerUnlocked ?? false,
       crownTaken: s.crownTaken ?? false,
+      towerCrushed: s.towerCrushed ?? false,
     }));
   }, []);
 
@@ -183,6 +193,7 @@ export function useGameEngine() {
       activeRaidId: saveData.state.activeRaidId ?? null,
       doomscrollerUnlocked: saveData.state.doomscrollerUnlocked ?? false,
       crownTaken: saveData.state.crownTaken ?? false,
+      towerCrushed: saveData.state.towerCrushed ?? false,
     };
     if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over" || loadedState.phase === "raid-complete" || loadedState.phase === "ck3-cutscene") {
       loadedState = { ...loadedState, phase: "main-menu" };
@@ -233,16 +244,21 @@ export function useGameEngine() {
     currentEncounter?.rounds[state.roundIndex] ?? null;
 
   const goToTitle = useCallback(() => {
-    setState((s) => getInitialState({
-      barrettDefeated: s.barrettDefeated,
-      crownTaken: s.crownTaken,
-      completedRaids: s.completedRaids,
-      mobsDefeated: s.mobsDefeated,
-      achievements: s.achievements,
-      unclaimedAchievements: s.unclaimedAchievements,
-      doomscrollerUnlocked: s.doomscrollerUnlocked,
+    const clean: GameState = { ...state, pendingDrops: [], showOutcome: false, lastOutcome: null, abilityMessage: null, itemActionMessage: null };
+    saveGameToSlot(activeSlot, clean);
+    setLastSavedAt(Date.now());
+    setState(getInitialState({
+      barrettDefeated: state.barrettDefeated,
+      crownTaken: state.crownTaken,
+      completedRaids: state.completedRaids,
+      mobsDefeated: state.mobsDefeated,
+      achievements: state.achievements,
+      unclaimedAchievements: state.unclaimedAchievements,
+      doomscrollerUnlocked: state.doomscrollerUnlocked,
+      towerCrushed: state.towerCrushed,
     }));
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, activeSlot]);
 
   const goToMainMenu = useCallback(() => {
     setState((s) => ({ ...s, phase: "main-menu", activeRaidId: null }));
@@ -474,7 +490,11 @@ export function useGameEngine() {
         // Calculate drops
         let rawDrops: GearItemInstance[];
         if (currentEncounter.isBoss) {
-          rawDrops = isRaid ? rollRaidBossDrops() : rollBossDrops();
+          if (s.activeRaidId === "tower") {
+            rawDrops = rollTowerBossDrops();
+          } else {
+            rawDrops = isRaid ? rollRaidBossDrops() : rollBossDrops();
+          }
         } else {
           rawDrops = rollMobDrops(currentEncounter.id, isRaid);
         }
@@ -498,6 +518,18 @@ export function useGameEngine() {
         if (currentEncounter.id === "raid-boss-hayes") {
           const alreadyEarned = s.achievements.includes("free-hayes") || s.unclaimedAchievements.includes("free-hayes");
           if (!alreadyEarned) newUnclaimedAchievements = [...newUnclaimedAchievements, "free-hayes"];
+        }
+
+        // free-cronin achievement
+        if (currentEncounter.id === "raid-boss-cronin") {
+          const alreadyEarned = s.achievements.includes("free-cronin") || s.unclaimedAchievements.includes("free-cronin");
+          if (!alreadyEarned) newUnclaimedAchievements = [...newUnclaimedAchievements, "free-cronin"];
+        }
+
+        // free-bryant achievement
+        if (currentEncounter.id === "raid-boss-bryant") {
+          const alreadyEarned = s.achievements.includes("free-bryant") || s.unclaimedAchievements.includes("free-bryant");
+          if (!alreadyEarned) newUnclaimedAchievements = [...newUnclaimedAchievements, "free-bryant"];
         }
 
         // matteo-phone secret achievement
@@ -525,6 +557,7 @@ export function useGameEngine() {
 
           if (isLastInRaid) {
             const isCK3Barrett = s.activeRaidId === "bryant";
+            const isTower = s.activeRaidId === "tower";
             return {
               ...s,
               phase: "raid-complete",
@@ -536,6 +569,7 @@ export function useGameEngine() {
               mobsDefeated: newMobsDefeated,
               unclaimedAchievements: newUnclaimedAchievements,
               crownTaken: isCK3Barrett ? true : s.crownTaken,
+              towerCrushed: isTower ? true : s.towerCrushed,
             };
           }
 
