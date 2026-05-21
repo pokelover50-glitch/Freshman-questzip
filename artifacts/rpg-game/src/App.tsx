@@ -799,13 +799,8 @@ function GameContent() {
                               Saved {formatSaveDate(save.savedAt)}
                             </p>
                             {/* Raid completion badges */}
-                            {(save.state.completedRaids?.length > 0 || save.state.barrettDefeated || save.state.crownTaken) && (
+                            {(save.state.completedRaids?.length > 0 || save.state.crownTaken) && (
                               <div className="flex flex-wrap gap-1.5 mt-2">
-                                {save.state.barrettDefeated && (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-primary/80">
-                                    ⚔️ Barrett Defeated
-                                  </span>
-                                )}
                                 {save.state.crownTaken && (
                                   <span className="inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full bg-yellow-400/15 border border-yellow-400/40 text-yellow-300/90">
                                     👑 Crown Taken
