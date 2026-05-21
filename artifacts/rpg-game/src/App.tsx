@@ -798,6 +798,31 @@ function GameContent() {
                             <p className="text-xs text-muted-foreground/50 mt-0.5">
                               Saved {formatSaveDate(save.savedAt)}
                             </p>
+                            {/* Raid completion badges */}
+                            {(save.state.completedRaids?.length > 0 || save.state.barrettDefeated) && (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {save.state.barrettDefeated && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-primary/80">
+                                    ⚔️ Barrett Defeated
+                                  </span>
+                                )}
+                                {save.state.completedRaids?.includes("hayes") && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/25 text-yellow-400/80">
+                                    🏆 Raid I
+                                  </span>
+                                )}
+                                {save.state.completedRaids?.includes("cronin") && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/25 text-yellow-400/80">
+                                    🏆 Raid II
+                                  </span>
+                                )}
+                                {save.state.completedRaids?.includes("bryant") && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-serif px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/25 text-yellow-400/80">
+                                    🏆 Raid III
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <p className="mt-1 text-sm text-muted-foreground/40 italic">Empty</p>
@@ -893,14 +918,22 @@ function GameContent() {
               </div>
 
               <div className="flex flex-col gap-5 w-full max-w-sm">
-                <Button
-                  size="lg"
-                  className="py-8 text-xl font-serif bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_30px_-8px_hsl(var(--primary))]"
-                  onClick={game.goToCharacterSelect}
-                  data-testid="button-begin-journey"
-                >
-                  Begin Your Journey
-                </Button>
+                <div className="relative">
+                  <Button
+                    size="lg"
+                    disabled={state.barrettDefeated}
+                    className={`w-full py-8 text-xl font-serif shadow-[0_0_30px_-8px_hsl(var(--primary))] ${state.barrettDefeated ? "bg-primary/20 text-primary/50 border border-primary/30 cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+                    onClick={state.barrettDefeated ? undefined : game.goToCharacterSelect}
+                    data-testid="button-begin-journey"
+                  >
+                    {state.barrettDefeated ? "Journey Completed ✓" : "Begin Your Journey"}
+                  </Button>
+                  {state.barrettDefeated && (
+                    <p className="mt-2 text-xs font-serif text-primary/50 italic text-center">
+                      You have conquered the halls. Barrett has been defeated.
+                    </p>
+                  )}
+                </div>
 
                 <div className="relative">
                   <Button

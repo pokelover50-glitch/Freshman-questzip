@@ -155,6 +155,11 @@ export function useGameEngine() {
       const clean: GameState = { ...state, pendingDrops: [], showOutcome: false, lastOutcome: null, abilityMessage: null, itemActionMessage: null };
       saveGameToSlot(activeSlot, clean);
       setLastSavedAt(Date.now());
+    } else if (state.phase === "game-over" && state.activeRaidId) {
+      // Died in a raid — save with raid cleared so they restart from encounter 1
+      const clean: GameState = { ...state, activeRaidId: null, encounterIndex: 0, pendingDrops: [], showOutcome: false, lastOutcome: null, abilityMessage: null, itemActionMessage: null };
+      saveGameToSlot(activeSlot, clean);
+      setLastSavedAt(Date.now());
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.zoneIndex, state.encounterIndex, state.phase, activeSlot]);
