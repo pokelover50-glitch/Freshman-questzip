@@ -49,6 +49,7 @@ export interface GearItemDef {
   isWeapon?: boolean;
   scalesWithZone?: boolean;
   barrettMultiplier?: number;
+  rarityColor?: string;
 }
 
 export interface GearItemInstance {

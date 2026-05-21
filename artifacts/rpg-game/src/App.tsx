@@ -256,7 +256,7 @@ function ChestSpinner({
                     className="absolute inset-0 flex flex-col items-center justify-center gap-1.5"
                   >
                     <span className="text-6xl">{currentItem?.item.emoji ?? "✨"}</span>
-                    <p className="font-serif text-sm text-muted-foreground">{currentItem?.item.name ?? "…"}</p>
+                    <p className="font-serif text-sm text-muted-foreground" style={currentItem?.item.rarityColor ? { color: currentItem.item.rarityColor } : undefined}>{currentItem?.item.name ?? "…"}</p>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -273,7 +273,7 @@ function ChestSpinner({
                     >
                       {wonItem?.emoji ?? "✨"}
                     </motion.span>
-                    <p className="font-serif font-bold text-base text-primary leading-tight">{wonItem?.name ?? "Unknown Item"}</p>
+                    <p className="font-serif font-bold text-base leading-tight" style={wonItem?.rarityColor ? { color: wonItem.rarityColor } : undefined}>{wonItem?.name ?? "Unknown Item"}</p>
                     <p className="text-[11px] text-muted-foreground text-center leading-relaxed">{wonItem?.description}</p>
                   </motion.div>
                 )}
@@ -325,7 +325,10 @@ function ChestSpinner({
                 >
                   <span className="text-base shrink-0">{entry.item.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[11px] font-serif leading-tight truncate ${isWon ? "text-yellow-300 font-bold" : isSpinning ? "text-primary font-semibold" : "text-foreground/80"}`}>
+                    <p
+                      className={`text-[11px] font-serif leading-tight truncate ${isWon ? "text-yellow-300 font-bold" : isSpinning ? "text-primary font-semibold" : "font-semibold"}`}
+                      style={!isWon && !isSpinning && entry.item.rarityColor ? { color: entry.item.rarityColor } : undefined}
+                    >
                       {entry.item.name}
                     </p>
                     <p className={`text-[10px] font-mono ${isWon ? "text-yellow-400" : isSpinning ? "text-primary/80" : "text-muted-foreground/60"}`}>
@@ -423,7 +426,10 @@ function InventoryPanel({
                     >
                       <span className="text-3xl shrink-0">{item.def.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <p className={`font-serif font-bold text-sm ${isEquipped ? "text-yellow-300" : "text-foreground"}`}>
+                        <p
+                          className={`font-serif font-bold text-sm ${isEquipped ? "text-yellow-300" : ""}`}
+                          style={!isEquipped && item.def.rarityColor ? { color: item.def.rarityColor } : undefined}
+                        >
                           {item.def.name}
                           {isEquipped && <span className="ml-2 text-[10px] text-yellow-400/80 uppercase tracking-wide font-sans">Equipped</span>}
                         </p>
@@ -561,7 +567,7 @@ function DropNotification({
               className="flex flex-col items-center gap-1"
             >
               <span className="text-3xl">{d.def.emoji}</span>
-              <span className="text-xs font-serif text-foreground">
+              <span className="text-xs font-serif" style={d.def.rarityColor ? { color: d.def.rarityColor } : undefined}>
                 {d.def.name}
               </span>
             </div>
@@ -1007,7 +1013,7 @@ function GameContent() {
                     return eq ? (
                       <div className="col-span-2 flex items-center justify-center gap-1.5">
                         <span className="text-base">{eq.def.emoji}</span>
-                        <span className="text-xs font-serif text-yellow-400/90 font-bold">{eq.def.name}</span>
+                        <span className="text-xs font-serif font-bold" style={eq.def.rarityColor ? { color: eq.def.rarityColor } : { color: "rgba(250,204,21,0.9)" }}>{eq.def.name}</span>
                         <span className="text-[10px] text-muted-foreground/60 font-serif">equipped</span>
                       </div>
                     ) : null;

@@ -12,6 +12,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     dropChance: 0,
     isWeapon: true,
     scalesWithZone: false,
+    rarityColor: "#9ca3af",
   },
   {
     id: "joses-bat",
@@ -24,6 +25,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     dropChance: 0,
     isWeapon: true,
     scalesWithZone: false,
+    rarityColor: "#4ade80",
   },
   {
     id: "trevons-flower",
@@ -36,6 +38,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     dropChance: 0,
     isWeapon: true,
     scalesWithZone: false,
+    rarityColor: "#4ade80",
   },
   {
     id: "cronins-twinblade",
@@ -48,6 +51,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     dropChance: 0,
     isWeapon: true,
     scalesWithZone: false,
+    rarityColor: "#60a5fa",
   },
   {
     id: "chatgpt",
@@ -60,6 +64,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     dropChance: 0,
     isWeapon: true,
     scalesWithZone: true,
+    rarityColor: "#60a5fa",
   },
   {
     id: "christians-greatsword",
@@ -72,6 +77,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     dropChance: 0,
     isWeapon: true,
     scalesWithZone: true,
+    rarityColor: "#c084fc",
   },
   {
     id: "doms-waraxe",
@@ -85,6 +91,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     isWeapon: true,
     scalesWithZone: true,
     barrettMultiplier: 2,
+    rarityColor: "#fb923c",
   },
 ];
 
