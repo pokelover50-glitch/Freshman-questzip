@@ -9,10 +9,11 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { GearItemInstance } from "./game/types";
-import { useState, useEffect, useMemo } from "react";
+import type { GearItemDef, GearItemInstance } from "./game/types";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { loadSave, hasSave, formatSaveDate } from "./game/saveLoad";
 import { ZONE_NAMES_SHORT } from "./game/encounters";
+import { CHEST_LOOT_POOLS, rollChestDrop } from "./game/gear";
 
 const ACHIEVEMENTS = [
   {
@@ -20,6 +21,14 @@ const ACHIEVEMENTS = [
     title: "Hall Monitor's Nightmare",
     description: "Defeat 10 mobs (7th Grader, 8th Grader, Fellow Freshman, Sophomore, Junior).",
     goal: 10,
+    reward: "🥪 Sandwich",
+  },
+  {
+    id: "defeat-barrett",
+    title: "Not the Real Barrett",
+    description: 'Defeat Barrett Luke Hutchins for the first time. "Something felt off… like this wasn\'t the true threat."',
+    goal: 1,
+    reward: "🧰 Bronze Chest",
   },
 ];
 
@@ -60,7 +69,7 @@ function AchievementsPanel({
           const claimed = achievements.includes(ach.id);
           const unclaimed = unclaimedAchievements.includes(ach.id);
           const completed = claimed || unclaimed;
-          const progress = ach.id === "defeat-10-mobs" ? Math.min(mobsDefeated, ach.goal) : 0;
+          const progress = ach.id === "defeat-10-mobs" ? Math.min(mobsDefeated, ach.goal) : completed ? ach.goal : 0;
           return (
             <div
               key={ach.id}
@@ -100,7 +109,7 @@ function AchievementsPanel({
                   {unclaimed && (
                     <div className="mt-2 space-y-1.5">
                       <p className="text-xs text-yellow-400/80 font-serif italic">
-                        Reward: 🥪 Sandwich — click to claim!
+                        Reward: {ach.reward} — click to claim!
                       </p>
                       <button
                         onClick={() => onClaim(ach.id)}
@@ -170,19 +179,143 @@ function HpBar({
   );
 }
 
+function ChestSpinner({
+  chest,
+  onClaim,
+  onClose,
+}: {
+  chest: GearItemInstance;
+  onClaim: (instanceId: string, wonItem: GearItemDef) => void;
+  onClose: () => void;
+}) {
+  const pool = CHEST_LOOT_POOLS[chest.def.id] ?? [];
+  const wonItemRef = useRef<GearItemDef | null>(null);
+  if (!wonItemRef.current) wonItemRef.current = rollChestDrop(chest.def.id);
+  const wonItem = wonItemRef.current;
+
+  const [displayIdx, setDisplayIdx] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+  const tickRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let count = 0;
+    const maxCount = 32;
+    const tick = () => {
+      count++;
+      setDisplayIdx((i) => (i + 1) % pool.length);
+      const delay = count < 16 ? 70 : count < 26 ? 140 : 240;
+      if (count >= maxCount) {
+        setTimeout(() => setShowResult(true), 350);
+      } else {
+        tickRef.current = setTimeout(tick, delay);
+      }
+    };
+    tickRef.current = setTimeout(tick, 70);
+    return () => { if (tickRef.current) clearTimeout(tickRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const currentItem = pool[displayIdx];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] flex items-center justify-center"
+    >
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+      <motion.div
+        initial={{ scale: 0.85, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 280, damping: 26 }}
+        className="relative z-10 bg-card border border-primary/50 rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center"
+      >
+        <h3 className="font-serif font-bold text-xl text-primary mb-1">Opening {chest.def.name}</h3>
+        <p className="text-xs text-muted-foreground font-serif mb-6">Spinning the contents…</p>
+
+        <div className="relative h-44 flex items-center justify-center mb-6 overflow-hidden rounded-xl border border-border bg-background/40">
+          <AnimatePresence mode="popLayout">
+            {!showResult ? (
+              <motion.div
+                key={displayIdx}
+                initial={{ y: -32, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 32, opacity: 0 }}
+                transition={{ duration: 0.12 }}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+              >
+                <span className="text-6xl">{currentItem?.item.emoji ?? "✨"}</span>
+                <p className="font-serif text-sm text-muted-foreground">{currentItem?.item.name ?? "…"}</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="result"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+              >
+                <motion.span
+                  animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
+                  transition={{ delay: 0.1, duration: 0.5 }}
+                  className="text-7xl"
+                >
+                  {wonItem?.emoji ?? "✨"}
+                </motion.span>
+                <p className="font-serif font-bold text-lg text-primary">{wonItem?.name ?? "Unknown Item"}</p>
+                <p className="text-xs text-muted-foreground px-4 leading-relaxed">{wonItem?.description}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {showResult && wonItem ? (
+          <Button
+            onClick={() => onClaim(chest.instanceId, wonItem)}
+            className="w-full font-serif font-bold bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            ✨ Claim!
+          </Button>
+        ) : (
+          <div className="h-9 flex items-center justify-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 rounded-full bg-primary/60"
+                animate={{ opacity: [0.3, 1, 0.3], y: [0, -4, 0] }}
+                transition={{ duration: 0.7, delay: i * 0.15, repeat: Infinity }}
+              />
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function InventoryPanel({
   inventory,
+  equippedItemId,
   onUse,
+  onEquip,
+  onUnequip,
+  onOpen,
   canUseItems,
   onClose,
 }: {
   inventory: GearItemInstance[];
+  equippedItemId: string | null;
   onUse: (id: string) => void;
+  onEquip: (itemId: string) => void;
+  onUnequip: () => void;
+  onOpen: (item: GearItemInstance) => void;
   canUseItems: boolean;
   onClose: () => void;
 }) {
   const chests = inventory.filter((i) => i.def.isChest);
-  const usables = inventory.filter((i) => !i.def.isChest);
+  const weapons = inventory.filter((i) => i.def.isWeapon);
+  const usables = inventory.filter((i) => !i.def.isChest && !i.def.isWeapon);
 
   return (
     <motion.div
@@ -221,6 +354,48 @@ function InventoryPanel({
             <p className="text-center text-muted-foreground font-serif italic text-sm py-8">
               Your backpack is empty. Defeat enemies to collect items!
             </p>
+          )}
+
+          {weapons.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
+                Weapons <span className="normal-case text-muted-foreground/40">(equip one at a time)</span>
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {weapons.map((item) => {
+                  const isEquipped = equippedItemId === item.def.id;
+                  return (
+                    <div
+                      key={item.instanceId}
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                        isEquipped
+                          ? "border-yellow-500/70 bg-yellow-500/10 shadow-[0_0_10px_-4px_rgba(234,179,8,0.5)]"
+                          : "border-border bg-background/40 hover:border-primary/40"
+                      }`}
+                    >
+                      <span className="text-3xl shrink-0">{item.def.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-serif font-bold text-sm ${isEquipped ? "text-yellow-300" : "text-foreground"}`}>
+                          {item.def.name}
+                          {isEquipped && <span className="ml-2 text-[10px] text-yellow-400/80 uppercase tracking-wide font-sans">Equipped</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
+                      </div>
+                      <button
+                        onClick={() => isEquipped ? onUnequip() : onEquip(item.def.id)}
+                        className={`shrink-0 px-3 py-1.5 rounded-md text-xs font-serif font-bold border transition-colors ${
+                          isEquipped
+                            ? "border-yellow-500/50 bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30"
+                            : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                        }`}
+                      >
+                        {isEquipped ? "Unequip" : "Equip"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {usables.length > 0 && (
@@ -267,17 +442,16 @@ function InventoryPanel({
                     <div className="flex-1 min-w-0">
                       <p className="font-serif font-bold text-sm text-primary">{item.def.name}</p>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        {item.def.id === "wooden-chest" && "Common chest from a defeated boss."}
-                        {item.def.id === "bronze-chest" && "Uncommon chest from a defeated boss."}
-                        {item.def.id === "silver-chest" && "Rare chest from a defeated boss."}
+                        {item.def.id === "wooden-chest" && "Common chest. Spin for a weapon!"}
+                        {item.def.id === "bronze-chest" && "Uncommon chest. Better odds for rare weapons!"}
+                        {item.def.id === "silver-chest" && "Rare chest. High chance of powerful weapons!"}
                       </p>
                     </div>
                     <button
-                      disabled
-                      className="shrink-0 px-3 py-1.5 rounded-md text-xs font-serif font-bold border border-border text-muted-foreground/50 bg-card cursor-not-allowed"
-                      title="Opening chests is coming soon!"
+                      onClick={() => { onOpen(item); onClose(); }}
+                      className="shrink-0 px-3 py-1.5 rounded-md text-xs font-serif font-bold border border-primary/60 bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
                     >
-                      🔒 Soon
+                      Open
                     </button>
                   </div>
                 ))}
@@ -364,6 +538,7 @@ function GameContent() {
   const { state, currentEncounter, currentRound } = game;
   const [showAchievements, setShowAchievements] = useState(false);
   const [showBackpack, setShowBackpack] = useState(false);
+  const [spinnerChest, setSpinnerChest] = useState<GearItemInstance | null>(null);
   const [saveExists, setSaveExists] = useState(() => hasSave());
   const [saveInfo, setSaveInfo] = useState(() => loadSave());
   const [showSavedBadge, setShowSavedBadge] = useState(false);
@@ -779,6 +954,16 @@ function GameContent() {
                     max={currentEncounter.enemyMaxHp}
                     reverse
                   />
+                  {state.equippedItemId && (() => {
+                    const eq = state.inventory.find((i) => i.def.id === state.equippedItemId && i.def.isWeapon);
+                    return eq ? (
+                      <div className="col-span-2 flex items-center justify-center gap-1.5">
+                        <span className="text-base">{eq.def.emoji}</span>
+                        <span className="text-xs font-serif text-yellow-400/90 font-bold">{eq.def.name}</span>
+                        <span className="text-[10px] text-muted-foreground/60 font-serif">equipped</span>
+                      </div>
+                    ) : null;
+                  })()}
                   <div className="col-span-2 flex items-center justify-center gap-3">
                     <span className="text-xs font-serif tracking-widest text-primary/70 uppercase">
                       {ZONE_NAMES[state.zoneIndex]} — Encounter{" "}
@@ -1069,9 +1254,27 @@ function GameContent() {
         {showBackpack && (
           <InventoryPanel
             inventory={state.inventory}
+            equippedItemId={state.equippedItemId}
             onUse={game.useItem}
+            onEquip={game.equipItem}
+            onUnequip={game.unequipItem}
+            onOpen={(item) => setSpinnerChest(item)}
             canUseItems={state.phase === "encounter" && !state.showOutcome}
             onClose={() => setShowBackpack(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Chest spinner */}
+      <AnimatePresence>
+        {spinnerChest && (
+          <ChestSpinner
+            chest={spinnerChest}
+            onClaim={(instanceId, wonItem) => {
+              game.openChest(instanceId, wonItem);
+              setSpinnerChest(null);
+            }}
+            onClose={() => setSpinnerChest(null)}
           />
         )}
       </AnimatePresence>

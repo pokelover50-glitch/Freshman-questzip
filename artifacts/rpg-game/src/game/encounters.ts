@@ -668,13 +668,11 @@ const BOSS_FINAL: Encounter = {
   ],
 };
 
+const ZONE_1_HP = [25, 30, 30, 35, 40];
 const ZONE_2_HP = [45, 55, 65, 75, 90];
 const ZONE_3_HP = [60, 75, 90, 110, 125];
 
-const ZONE_2_MIN_DMG = 5;
-const ZONE_3_MIN_DMG = 6;
-
-function scaleMobs(hpValues: number[], minPlayerDamage: number): Encounter[] {
+function scaleMobs(hpValues: number[], exactPlayerDamage: number): Encounter[] {
   return MOB_ENCOUNTERS.map((enc, i) => ({
     ...enc,
     enemyMaxHp: hpValues[i] ?? enc.enemyMaxHp,
@@ -682,16 +680,29 @@ function scaleMobs(hpValues: number[], minPlayerDamage: number): Encounter[] {
       ...round,
       choices: round.choices.map((choice) => ({
         ...choice,
-        playerDamage: Math.max(choice.playerDamage, minPlayerDamage),
+        playerDamage: exactPlayerDamage,
       })),
     })),
   }));
 }
 
+function scaleBoss(boss: Encounter, exactPlayerDamage: number): Encounter {
+  return {
+    ...boss,
+    rounds: boss.rounds.map((round) => ({
+      ...round,
+      choices: round.choices.map((choice) => ({
+        ...choice,
+        playerDamage: exactPlayerDamage,
+      })),
+    })),
+  };
+}
+
 export const ZONES: Encounter[][] = [
-  [...MOB_ENCOUNTERS, BOSS_1],
-  [...scaleMobs(ZONE_2_HP, ZONE_2_MIN_DMG), BOSS_2],
-  [...scaleMobs(ZONE_3_HP, ZONE_3_MIN_DMG), BOSS_FINAL],
+  [...scaleMobs(ZONE_1_HP, 2), scaleBoss(BOSS_1, 5)],
+  [...scaleMobs(ZONE_2_HP, 4), scaleBoss(BOSS_2, 7)],
+  [...scaleMobs(ZONE_3_HP, 8), scaleBoss(BOSS_FINAL, 10)],
 ];
 
 export const ZONE_NAMES = [

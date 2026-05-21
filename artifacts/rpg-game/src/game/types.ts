@@ -46,6 +46,9 @@ export interface GearItemDef {
   dropChance: number;
   stackable?: boolean;
   isChest?: boolean;
+  isWeapon?: boolean;
+  scalesWithZone?: boolean;
+  barrettMultiplier?: number;
 }
 
 export interface GearItemInstance {
@@ -101,4 +104,5 @@ export interface GameState {
   mobsDefeated: number;
   achievements: string[];
   unclaimedAchievements: string[];
+  equippedItemId: string | null;
 }

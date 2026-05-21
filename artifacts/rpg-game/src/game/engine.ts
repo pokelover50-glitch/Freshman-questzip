@@ -1,8 +1,20 @@
 import { useState, useCallback, useEffect } from "react";
-import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemInstance } from "./types";
+import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItemInstance } from "./types";
 import { ZONES, ACHIEVEMENT_MOB_IDS } from "./encounters";
-import { rollMobDrops, rollBossDrops, FOOD_ITEMS } from "./gear";
+import { rollMobDrops, rollBossDrops, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop } from "./gear";
+
 import { saveGame, loadSave, deleteSave, type SaveData } from "./saveLoad";
+
+const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
+  "defeat-10-mobs": () => ({
+    instanceId: `sandwich-claim-${Math.random().toString(36).slice(2, 9)}`,
+    def: FOOD_ITEMS.find((f) => f.id === "sandwich")!,
+  }),
+  "defeat-barrett": () => ({
+    instanceId: `bronze-chest-claim-${Math.random().toString(36).slice(2, 9)}`,
+    def: CHEST_ITEMS.find((c) => c.id === "bronze-chest")!,
+  }),
+};
 
 function getInitialState(
   preserve?: Pick<GameState, "barrettDefeated" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements">
@@ -28,6 +40,7 @@ function getInitialState(
     mobsDefeated: preserve?.mobsDefeated ?? 0,
     achievements: preserve?.achievements ?? [],
     unclaimedAchievements: preserve?.unclaimedAchievements ?? [],
+    equippedItemId: null,
   };
 }
 
@@ -107,6 +120,7 @@ export function useGameEngine() {
       pendingDrops: s.pendingDrops ?? [],
       defeatedBosses: s.defeatedBosses ?? [],
       completedRaids: s.completedRaids ?? [],
+      equippedItemId: s.equippedItemId ?? null,
     }));
   }, []);
 
@@ -136,6 +150,7 @@ export function useGameEngine() {
       inventory: saveData.state.inventory ?? [],
       pendingDrops: saveData.state.pendingDrops ?? [],
       defeatedBosses: saveData.state.defeatedBosses ?? [],
+      equippedItemId: saveData.state.equippedItemId ?? null,
     };
     if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over") {
       loadedState = { ...loadedState, phase: "main-menu" };
@@ -218,24 +233,42 @@ export function useGameEngine() {
     setState((s) => {
       if (!currentEncounter || !s.selectedClass) return s;
 
+      // Scale player's attack damage by zone (1.1x per zone, base at zone 0)
+      const zoneMultiplier = Math.pow(1.1, s.zoneIndex);
+      const scaledEnemyDamage = Math.round(choice.enemyDamage * zoneMultiplier);
+
       const { enemyDamage, playerDamage, healAmount, abilityMessage } =
         applyClassAbility(
           s.selectedClass,
-          choice.enemyDamage,
+          scaledEnemyDamage,
           choice.playerDamage,
           choice.healAmount,
           currentEncounter.enemyMaxHp,
           currentEncounter.id,
         );
 
+      // Add equipped weapon bonus — not doubled by Bulking class
+      const equippedWeapon = CHEST_WEAPON_ITEMS.find((w) => w.id === s.equippedItemId);
+      let weaponBonus = 0;
+      if (equippedWeapon) {
+        weaponBonus = equippedWeapon.scalesWithZone
+          ? Math.round(equippedWeapon.damage * zoneMultiplier)
+          : equippedWeapon.damage;
+        if (equippedWeapon.barrettMultiplier && currentEncounter.id === "boss-barrett") {
+          weaponBonus *= equippedWeapon.barrettMultiplier;
+        }
+      }
+
+      const totalEnemyDamage = enemyDamage + weaponBonus;
+
       const newPlayerHpRaw = Math.max(0, s.playerHp - playerDamage + healAmount);
       const newPlayerHp = Math.min(newPlayerHpRaw, s.playerMaxHp);
-      const newEnemyHp = Math.max(0, s.enemyHp - enemyDamage);
+      const newEnemyHp = Math.max(0, s.enemyHp - totalEnemyDamage);
 
       const modifiedOutcome: ChoiceOutcome = {
         ...choice,
         playerDamage,
-        enemyDamage: Math.min(enemyDamage, s.enemyHp),
+        enemyDamage: Math.min(totalEnemyDamage, s.enemyHp),
         healAmount,
       };
 
@@ -378,6 +411,12 @@ export function useGameEngine() {
         const newInventory = [...s.inventory, ...allDrops];
 
         if (isLastZone && isLastInZone) {
+          const alreadyEarnedBarrett =
+            s.achievements.includes("defeat-barrett") ||
+            s.unclaimedAchievements.includes("defeat-barrett");
+          const finalUnclaimedAchievements = alreadyEarnedBarrett
+            ? newUnclaimedAchievements
+            : [...newUnclaimedAchievements, "defeat-barrett"];
           return {
             ...s,
             phase: "victory",
@@ -387,7 +426,7 @@ export function useGameEngine() {
             defeatedBosses: newDefeatedBosses,
             barrettDefeated: true,
             mobsDefeated: newMobsDefeated,
-            unclaimedAchievements: newUnclaimedAchievements,
+            unclaimedAchievements: finalUnclaimedAchievements,
           };
         }
 
@@ -461,19 +500,46 @@ export function useGameEngine() {
     setState((s) => ({ ...s, itemActionMessage: null }));
   }, []);
 
+  const openChest = useCallback((instanceId: string, wonItemDef: GearItemDef) => {
+    setState((s) => {
+      const chestIdx = s.inventory.findIndex((i) => i.instanceId === instanceId);
+      if (chestIdx === -1) return s;
+
+      const alreadyHas = s.inventory.some((i) => i.def.id === wonItemDef.id && i.def.isWeapon);
+      const newItem: GearItemInstance = {
+        instanceId: `${wonItemDef.id}-${Math.random().toString(36).slice(2, 9)}`,
+        def: wonItemDef,
+      };
+      const withoutChest = s.inventory.filter((_, i) => i !== chestIdx);
+      return {
+        ...s,
+        inventory: alreadyHas ? withoutChest : [...withoutChest, newItem],
+        itemActionMessage: alreadyHas
+          ? `You already own ${wonItemDef.name} — chest consumed.`
+          : null,
+      };
+    });
+  }, []);
+
+  const equipItem = useCallback((itemId: string) => {
+    setState((s) => ({ ...s, equippedItemId: itemId }));
+  }, []);
+
+  const unequipItem = useCallback(() => {
+    setState((s) => ({ ...s, equippedItemId: null }));
+  }, []);
+
   const claimAchievement = useCallback((id: string) => {
     setState((s) => {
       if (!s.unclaimedAchievements.includes(id)) return s;
-      const sandwichDef = FOOD_ITEMS.find((f) => f.id === "sandwich")!;
-      const sandwichInstance: GearItemInstance = {
-        instanceId: `sandwich-claim-${Math.random().toString(36).slice(2, 9)}`,
-        def: sandwichDef,
-      };
+      const rewardFn = ACHIEVEMENT_REWARDS[id];
+      if (!rewardFn) return s;
+      const rewardItem = rewardFn();
       return {
         ...s,
         achievements: [...s.achievements, id],
         unclaimedAchievements: s.unclaimedAchievements.filter((a) => a !== id),
-        inventory: [...s.inventory, sandwichInstance],
+        inventory: [...s.inventory, rewardItem],
       };
     });
   }, []);
@@ -491,6 +557,9 @@ export function useGameEngine() {
     startNewGame,
     chooseAnswer,
     useItem,
+    openChest,
+    equipItem,
+    unequipItem,
     continueAfterOutcome,
     dismissDrops,
     dismissItemMessage,

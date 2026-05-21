@@ -1,5 +1,141 @@
 import type { GearItemDef, GearItemInstance } from "./types";
 
+export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
+  {
+    id: "matteos-phone",
+    name: "Matteo's Phone",
+    emoji: "📱",
+    description: "+3 damage on any choice selected.",
+    damage: 3,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: false,
+  },
+  {
+    id: "joses-bat",
+    name: "Jose's Bat",
+    emoji: "🏏",
+    description: "+8 damage on any choice selected.",
+    damage: 8,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: false,
+  },
+  {
+    id: "trevons-flower",
+    name: "Trevon's Flower",
+    emoji: "🌸",
+    description: "+17 damage on any choice selected.",
+    damage: 17,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: false,
+  },
+  {
+    id: "cronins-twinblade",
+    name: "Cronin's Twinblade",
+    emoji: "⚔️",
+    description: "+25 damage on any choice selected.",
+    damage: 25,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: false,
+  },
+  {
+    id: "chatgpt",
+    name: "ChatGPT",
+    emoji: "🤖",
+    description: "+33 damage on any choice. Scales with zone.",
+    damage: 33,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: true,
+  },
+  {
+    id: "christians-greatsword",
+    name: "Christian's Greatsword",
+    emoji: "🗡️",
+    description: "+79 damage on any choice. Scales with zone.",
+    damage: 79,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: true,
+  },
+  {
+    id: "doms-waraxe",
+    name: "Dom's Waraxe",
+    emoji: "🪓",
+    description: "+150 damage on any choice. Scales with zone. x2 damage vs Barrett Luke Hutchins.",
+    damage: 150,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: true,
+    barrettMultiplier: 2,
+  },
+];
+
+type ChestLootEntry = { item: GearItemDef; weight: number };
+
+function cwById(id: string): GearItemDef {
+  return CHEST_WEAPON_ITEMS.find((w) => w.id === id)!;
+}
+
+const WOODEN_POOL: ChestLootEntry[] = [
+  { item: cwById("matteos-phone"), weight: 55 },
+  { item: cwById("cronins-twinblade"), weight: 10 },
+  { item: cwById("joses-bat"), weight: 20 },
+  { item: cwById("trevons-flower"), weight: 15 },
+];
+
+const BRONZE_POOL: ChestLootEntry[] = [
+  { item: cwById("christians-greatsword"), weight: 7 },
+  { item: cwById("doms-waraxe"), weight: 3 },
+  { item: cwById("cronins-twinblade"), weight: 20 },
+  { item: cwById("chatgpt"), weight: 10 },
+  { item: cwById("joses-bat"), weight: 35 },
+  { item: cwById("trevons-flower"), weight: 25 },
+];
+
+const SILVER_POOL: ChestLootEntry[] = [
+  { item: cwById("christians-greatsword"), weight: 15 },
+  { item: cwById("doms-waraxe"), weight: 10 },
+  { item: cwById("cronins-twinblade"), weight: 25 },
+  { item: cwById("chatgpt"), weight: 25 },
+  { item: cwById("trevons-flower"), weight: 25 },
+];
+
+export const CHEST_LOOT_POOLS: Record<string, ChestLootEntry[]> = {
+  "wooden-chest": WOODEN_POOL,
+  "bronze-chest": BRONZE_POOL,
+  "silver-chest": SILVER_POOL,
+};
+
+export function rollChestDrop(chestId: string): GearItemDef | null {
+  const pool = CHEST_LOOT_POOLS[chestId];
+  if (!pool) return null;
+  const totalWeight = pool.reduce((sum, e) => sum + e.weight, 0);
+  let roll = Math.random() * totalWeight;
+  for (const entry of pool) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.item;
+  }
+  return pool[pool.length - 1].item;
+}
+
 export const MOB_ITEMS: GearItemDef[] = [
   {
     id: "pencil",
