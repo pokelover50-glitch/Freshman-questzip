@@ -369,25 +369,32 @@ function ChestSpinner({
 function InventoryPanel({
   inventory,
   equippedItemId,
+  equippedArmorId,
   onUse,
   onEquip,
   onUnequip,
+  onEquipArmor,
+  onUnequipArmor,
   onOpen,
   canUseItems,
   onClose,
 }: {
   inventory: GearItemInstance[];
   equippedItemId: string | null;
+  equippedArmorId: string | null;
   onUse: (id: string) => void;
   onEquip: (itemId: string) => void;
   onUnequip: () => void;
+  onEquipArmor: (itemId: string) => void;
+  onUnequipArmor: () => void;
   onOpen: (item: GearItemInstance) => void;
   canUseItems: boolean;
   onClose: () => void;
 }) {
   const chests = inventory.filter((i) => i.def.isChest);
   const weapons = inventory.filter((i) => i.def.isWeapon);
-  const usables = inventory.filter((i) => !i.def.isChest && !i.def.isWeapon);
+  const armors = inventory.filter((i) => i.def.isArmor);
+  const usables = inventory.filter((i) => !i.def.isChest && !i.def.isWeapon && !i.def.isArmor);
 
   return (
     <motion.div
@@ -426,6 +433,51 @@ function InventoryPanel({
             <p className="text-center text-muted-foreground font-serif italic text-sm py-8">
               Your backpack is empty. Defeat enemies to collect items!
             </p>
+          )}
+
+          {armors.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
+                Armor <span className="normal-case text-muted-foreground/40">(equip one at a time)</span>
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {armors.map((item) => {
+                  const isEquipped = equippedArmorId === item.def.id;
+                  return (
+                    <div
+                      key={item.instanceId}
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                        isEquipped
+                          ? "border-blue-400/70 bg-blue-400/10 shadow-[0_0_10px_-4px_rgba(96,165,250,0.5)]"
+                          : "border-border bg-background/40 hover:border-primary/40"
+                      }`}
+                    >
+                      <span className="text-3xl shrink-0">{item.def.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`font-serif font-bold text-sm ${isEquipped ? "text-blue-300" : ""}`}
+                          style={!isEquipped && item.def.rarityColor ? { color: item.def.rarityColor } : undefined}
+                        >
+                          {item.def.name}
+                          {isEquipped && <span className="ml-2 text-[10px] text-blue-400/80 uppercase tracking-wide font-sans">Equipped</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
+                      </div>
+                      <button
+                        onClick={() => isEquipped ? onUnequipArmor() : onEquipArmor(item.def.id)}
+                        className={`shrink-0 px-3 py-1.5 rounded-md text-xs font-serif font-bold border transition-colors ${
+                          isEquipped
+                            ? "border-blue-400/50 bg-blue-400/20 text-blue-300 hover:bg-blue-400/30"
+                            : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                        }`}
+                      >
+                        {isEquipped ? "Unequip" : "Equip"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {weapons.length > 0 && (
@@ -1093,16 +1145,30 @@ function GameContent() {
                     max={currentEncounter.enemyMaxHp}
                     reverse
                   />
-                  {state.equippedItemId && (() => {
-                    const eq = state.inventory.find((i) => i.def.id === state.equippedItemId && i.def.isWeapon);
-                    return eq ? (
-                      <div className="col-span-2 flex items-center justify-center gap-1.5">
-                        <span className="text-base">{eq.def.emoji}</span>
-                        <span className="text-xs font-serif font-bold" style={eq.def.rarityColor ? { color: eq.def.rarityColor } : { color: "rgba(250,204,21,0.9)" }}>{eq.def.name}</span>
-                        <span className="text-[10px] text-muted-foreground/60 font-serif">equipped</span>
-                      </div>
-                    ) : null;
-                  })()}
+                  {(state.equippedItemId || state.equippedArmorId) && (
+                    <div className="col-span-2 flex items-center justify-center gap-3 flex-wrap">
+                      {state.equippedItemId && (() => {
+                        const eq = state.inventory.find((i) => i.def.id === state.equippedItemId && i.def.isWeapon);
+                        return eq ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base">{eq.def.emoji}</span>
+                            <span className="text-xs font-serif font-bold" style={eq.def.rarityColor ? { color: eq.def.rarityColor } : { color: "rgba(250,204,21,0.9)" }}>{eq.def.name}</span>
+                            <span className="text-[10px] text-muted-foreground/60 font-serif">equipped</span>
+                          </div>
+                        ) : null;
+                      })()}
+                      {state.equippedArmorId && (() => {
+                        const eq = state.inventory.find((i) => i.def.id === state.equippedArmorId && i.def.isArmor);
+                        return eq ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base">{eq.def.emoji}</span>
+                            <span className="text-xs font-serif font-bold" style={{ color: eq.def.rarityColor ?? "rgba(96,165,250,0.9)" }}>{eq.def.name}</span>
+                            <span className="text-[10px] text-muted-foreground/60 font-serif">+{eq.def.hpBonus}hp</span>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
                   <div className="col-span-2 flex items-center justify-center gap-3">
                     <span className="text-xs font-serif tracking-widest text-primary/70 uppercase">
                       {ZONE_NAMES[state.zoneIndex]} — Encounter{" "}
@@ -1461,9 +1527,12 @@ function GameContent() {
           <InventoryPanel
             inventory={state.inventory}
             equippedItemId={state.equippedItemId}
+            equippedArmorId={state.equippedArmorId}
             onUse={game.useItem}
             onEquip={game.equipItem}
             onUnequip={game.unequipItem}
+            onEquipArmor={game.equipArmor}
+            onUnequipArmor={game.unequipArmor}
             onOpen={(item) => setSpinnerChest(item)}
             canUseItems={state.phase === "encounter" && !state.showOutcome}
             onClose={() => setShowBackpack(false)}

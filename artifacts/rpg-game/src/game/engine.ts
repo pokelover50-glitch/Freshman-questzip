@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItemInstance } from "./types";
 import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS } from "./encounters";
-import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop } from "./gear";
+import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS } from "./gear";
 
 import { saveGame, loadSave, deleteSave, type SaveData } from "./saveLoad";
 
@@ -45,6 +45,7 @@ function getInitialState(
     achievements: preserve?.achievements ?? [],
     unclaimedAchievements: preserve?.unclaimedAchievements ?? [],
     equippedItemId: null,
+    equippedArmorId: null,
     defeatedByName: null,
     activeRaidId: null,
     doomscrollerUnlocked: preserve?.doomscrollerUnlocked ?? false,
@@ -164,6 +165,7 @@ export function useGameEngine() {
       pendingDrops: saveData.state.pendingDrops ?? [],
       defeatedBosses: saveData.state.defeatedBosses ?? [],
       equippedItemId: saveData.state.equippedItemId ?? null,
+      equippedArmorId: saveData.state.equippedArmorId ?? null,
       defeatedByName: saveData.state.defeatedByName ?? null,
       activeRaidId: saveData.state.activeRaidId ?? null,
       doomscrollerUnlocked: saveData.state.doomscrollerUnlocked ?? false,
@@ -661,6 +663,36 @@ export function useGameEngine() {
     setState((s) => ({ ...s, equippedItemId: null }));
   }, []);
 
+  const equipArmor = useCallback((itemId: string) => {
+    setState((s) => {
+      const armorItem = ARMOR_ITEMS.find((a) => a.id === itemId);
+      if (!armorItem || !armorItem.hpBonus) return s;
+      let newMaxHp = s.playerMaxHp;
+      let newHp = s.playerHp;
+      if (s.equippedArmorId) {
+        const oldArmor = ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
+        if (oldArmor?.hpBonus) {
+          newMaxHp -= oldArmor.hpBonus;
+          newHp = Math.min(newHp, newMaxHp);
+        }
+      }
+      newMaxHp += armorItem.hpBonus;
+      newHp += armorItem.hpBonus;
+      return { ...s, equippedArmorId: itemId, playerMaxHp: newMaxHp, playerHp: newHp };
+    });
+  }, []);
+
+  const unequipArmor = useCallback(() => {
+    setState((s) => {
+      if (!s.equippedArmorId) return s;
+      const armorItem = ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
+      if (!armorItem?.hpBonus) return { ...s, equippedArmorId: null };
+      const newMaxHp = s.playerMaxHp - armorItem.hpBonus;
+      const newHp = Math.min(s.playerHp, newMaxHp);
+      return { ...s, equippedArmorId: null, playerMaxHp: newMaxHp, playerHp: newHp };
+    });
+  }, []);
+
   const claimAchievement = useCallback((id: string) => {
     setState((s) => {
       if (!s.unclaimedAchievements.includes(id)) return s;
@@ -700,6 +732,8 @@ export function useGameEngine() {
     openChest,
     equipItem,
     unequipItem,
+    equipArmor,
+    unequipArmor,
     continueAfterOutcome,
     dismissDrops,
     dismissItemMessage,

@@ -125,10 +125,73 @@ const SILVER_POOL: ChestLootEntry[] = [
   { item: cwById("trevons-flower"), weight: 25 },
 ];
 
+export const ARMOR_ITEMS: GearItemDef[] = [
+  {
+    id: "bronze-armor",
+    name: "Bronze Armor",
+    emoji: "🛡️",
+    description: "+45 Max HP while equipped.",
+    damage: 0,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isArmor: true,
+    hpBonus: 45,
+    rarityColor: "#cd7f32",
+  },
+  {
+    id: "silver-armor",
+    name: "Silver Armor",
+    emoji: "🛡️",
+    description: "+95 Max HP while equipped.",
+    damage: 0,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isArmor: true,
+    hpBonus: 95,
+    rarityColor: "#9ca3af",
+  },
+  {
+    id: "gold-armor",
+    name: "Gold Armor",
+    emoji: "🛡️",
+    description: "+150 Max HP while equipped.",
+    damage: 0,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isArmor: true,
+    hpBonus: 150,
+    rarityColor: "#fbbf24",
+  },
+  {
+    id: "doms-armor",
+    name: "Dom's Armor",
+    emoji: "🛡️",
+    description: "+250 Max HP while equipped.",
+    damage: 0,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isArmor: true,
+    hpBonus: 250,
+    rarityColor: "#fb923c",
+  },
+];
+
+const ARMOR_POOL: ChestLootEntry[] = [
+  { item: ARMOR_ITEMS[0], weight: 50 },
+  { item: ARMOR_ITEMS[1], weight: 35 },
+  { item: ARMOR_ITEMS[2], weight: 12.5 },
+  { item: ARMOR_ITEMS[3], weight: 2.5 },
+];
+
 export const CHEST_LOOT_POOLS: Record<string, ChestLootEntry[]> = {
   "wooden-chest": WOODEN_POOL,
   "bronze-chest": BRONZE_POOL,
   "silver-chest": SILVER_POOL,
+  "armor-chest": ARMOR_POOL,
 };
 
 export function rollChestDrop(chestId: string): GearItemDef | null {
@@ -260,6 +323,18 @@ export const CHEST_ITEMS: GearItemDef[] = [
     isChest: true,
     stackable: true,
   },
+  {
+    id: "armor-chest",
+    name: "Armor Chest",
+    emoji: "🪖",
+    description: "Contains a piece of armor that grants bonus Max HP.",
+    damage: 0,
+    target: "any",
+    isFromBoss: true,
+    dropChance: 0,
+    isChest: true,
+    stackable: true,
+  },
 ];
 
 const FOOD_DROP_MOB_IDS = new Set([
@@ -303,18 +378,24 @@ export function rollMobDrops(encounterId?: string, alwaysDropFood = false): Gear
   return drops;
 }
 
+const ARMOR_CHEST = CHEST_ITEMS[3];
+
 export function rollBossDrops(): GearItemInstance[] {
   const roll = Math.random() * 100;
   let chest: GearItemDef;
   if (roll < 55) chest = CHEST_ITEMS[0];
   else if (roll < 90) chest = CHEST_ITEMS[1];
   else chest = CHEST_ITEMS[2];
-  return [makeInstance(chest)];
+  const drops = [makeInstance(chest)];
+  if (Math.random() < 0.5) drops.push(makeInstance(ARMOR_CHEST));
+  return drops;
 }
 
 export function rollRaidBossDrops(): GearItemInstance[] {
   const chest = Math.random() < 0.65 ? CHEST_ITEMS[1] : CHEST_ITEMS[2];
-  return [makeInstance(chest)];
+  const drops = [makeInstance(chest)];
+  if (Math.random() < 0.5) drops.push(makeInstance(ARMOR_CHEST));
+  return drops;
 }
 
 export function rollDoomscrollerChest(): GearItemInstance {

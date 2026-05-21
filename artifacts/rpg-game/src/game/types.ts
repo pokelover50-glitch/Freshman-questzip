@@ -47,6 +47,8 @@ export interface GearItemDef {
   stackable?: boolean;
   isChest?: boolean;
   isWeapon?: boolean;
+  isArmor?: boolean;
+  hpBonus?: number;
   scalesWithZone?: boolean;
   barrettMultiplier?: number;
   rarityColor?: string;
@@ -107,6 +109,7 @@ export interface GameState {
   achievements: string[];
   unclaimedAchievements: string[];
   equippedItemId: string | null;
+  equippedArmorId: string | null;
   defeatedByName: string | null;
   activeRaidId: string | null;
   doomscrollerUnlocked: boolean;
