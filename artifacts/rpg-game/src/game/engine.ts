@@ -1,9 +1,45 @@
 import { useState, useCallback, useEffect } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItemInstance } from "./types";
-import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS } from "./encounters";
+import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS, GOLD_REWARDS } from "./encounters";
 import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollTowerBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS } from "./gear";
 
 import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, getGlobalDoomscrollerUnlocked, setGlobalDoomscrollerUnlocked, type SaveData, type SaveSlot } from "./saveLoad";
+
+export const SHOP_ITEMS = [
+  {
+    id: "sandwich",
+    name: "Sandwich",
+    emoji: "🥪",
+    price: 100,
+    description: "Restores HP during battle.",
+    make: (): GearItemInstance => ({
+      instanceId: `shop-sandwich-${Math.random().toString(36).slice(2, 9)}`,
+      def: FOOD_ITEMS.find((f) => f.id === "sandwich")!,
+    }),
+  },
+  {
+    id: "bronze-chest",
+    name: "Bronze Chest",
+    emoji: "📦",
+    price: 150,
+    description: "Contains random gear.",
+    make: (): GearItemInstance => ({
+      instanceId: `shop-bronze-${Math.random().toString(36).slice(2, 9)}`,
+      def: CHEST_ITEMS.find((c) => c.id === "bronze-chest")!,
+    }),
+  },
+  {
+    id: "silver-chest",
+    name: "Silver Chest",
+    emoji: "🎁",
+    price: 500,
+    description: "Contains rare gear.",
+    make: (): GearItemInstance => ({
+      instanceId: `shop-silver-${Math.random().toString(36).slice(2, 9)}`,
+      def: CHEST_ITEMS.find((c) => c.id === "silver-chest")!,
+    }),
+  },
+];
 
 const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
   "defeat-10-mobs": () => ({
@@ -29,7 +65,7 @@ const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
 };
 
 function getInitialState(
-  preserve?: Pick<GameState, "barrettDefeated" | "crownTaken" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked" | "towerCrushed">
+  preserve?: Pick<GameState, "barrettDefeated" | "crownTaken" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked" | "towerCrushed" | "gold">
 ): GameState {
   return {
     phase: "title",
@@ -59,6 +95,7 @@ function getInitialState(
     activeRaidId: null,
     doomscrollerUnlocked: preserve?.doomscrollerUnlocked ?? getGlobalDoomscrollerUnlocked(),
     towerCrushed: preserve?.towerCrushed ?? false,
+    gold: preserve?.gold ?? 0,
   };
 }
 
@@ -154,6 +191,7 @@ export function useGameEngine() {
       doomscrollerUnlocked: s.doomscrollerUnlocked || getGlobalDoomscrollerUnlocked(),
       crownTaken: s.crownTaken ?? false,
       towerCrushed: s.towerCrushed ?? false,
+      gold: s.gold ?? 0,
     }));
   }, []);
 
@@ -194,6 +232,7 @@ export function useGameEngine() {
       doomscrollerUnlocked: saveData.state.doomscrollerUnlocked || getGlobalDoomscrollerUnlocked(),
       crownTaken: saveData.state.crownTaken ?? false,
       towerCrushed: saveData.state.towerCrushed ?? false,
+      gold: saveData.state.gold ?? 0,
     };
     if (getGlobalDoomscrollerUnlocked() && !loadedState.achievements.includes("matteo-phone") && !loadedState.unclaimedAchievements.includes("matteo-phone")) {
       loadedState = { ...loadedState, achievements: [...loadedState.achievements, "matteo-phone"] };
@@ -259,6 +298,7 @@ export function useGameEngine() {
       unclaimedAchievements: state.unclaimedAchievements,
       doomscrollerUnlocked: state.doomscrollerUnlocked,
       towerCrushed: state.towerCrushed,
+      gold: state.gold,
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, activeSlot]);
@@ -554,6 +594,17 @@ export function useGameEngine() {
 
         const newInventory = [...s.inventory, ...drops];
 
+        // ── Gold reward ──────────────────────────────────────────────────────
+        const rawId = currentEncounter.id;
+        let goldEarned = 0;
+        if (rawId.startsWith("tower-") && !currentEncounter.isBoss) {
+          const baseId = rawId.slice(6);
+          goldEarned = (GOLD_REWARDS[baseId] ?? 0) * 3;
+        } else {
+          goldEarned = GOLD_REWARDS[rawId] ?? 0;
+        }
+        const newGold = s.gold + goldEarned;
+
         // ── RAID path ───────────────────────────────────────────────────────
         if (isRaid && raidEncounters) {
           const isLastInRaid = s.encounterIndex >= raidEncounters.length - 1;
@@ -573,6 +624,7 @@ export function useGameEngine() {
               unclaimedAchievements: newUnclaimedAchievements,
               crownTaken: isCK3Barrett ? true : s.crownTaken,
               towerCrushed: isTower ? true : s.towerCrushed,
+              gold: newGold,
             };
           }
 
@@ -592,6 +644,7 @@ export function useGameEngine() {
             defeatedBosses: newDefeatedBosses,
             mobsDefeated: newMobsDefeated,
             unclaimedAchievements: newUnclaimedAchievements,
+            gold: newGold,
           };
         }
 
@@ -616,6 +669,7 @@ export function useGameEngine() {
             barrettDefeated: true,
             mobsDefeated: newMobsDefeated,
             unclaimedAchievements: finalUnclaimedAchievements,
+            gold: newGold,
           };
         }
 
@@ -637,6 +691,7 @@ export function useGameEngine() {
             abilityMessage: null,
             mobsDefeated: newMobsDefeated,
             unclaimedAchievements: newUnclaimedAchievements,
+            gold: newGold,
           };
         }
 
@@ -655,6 +710,7 @@ export function useGameEngine() {
           abilityMessage: null,
           mobsDefeated: newMobsDefeated,
           unclaimedAchievements: newUnclaimedAchievements,
+          gold: newGold,
         };
       }
 
@@ -787,6 +843,23 @@ export function useGameEngine() {
     });
   }, []);
 
+  const goToShop = useCallback(() => {
+    setState((s) => ({ ...s, phase: "shop" }));
+  }, []);
+
+  const buyShopItem = useCallback((itemId: string) => {
+    setState((s) => {
+      const shopItem = SHOP_ITEMS.find((i) => i.id === itemId);
+      if (!shopItem || s.gold < shopItem.price) return s;
+      const newItem = shopItem.make();
+      return {
+        ...s,
+        gold: s.gold - shopItem.price,
+        inventory: [...s.inventory, newItem],
+      };
+    });
+  }, []);
+
   return {
     state,
     currentEncounter,
@@ -796,6 +869,7 @@ export function useGameEngine() {
     goToMainMenu,
     goToRaidSelect,
     goToCharacterSelect,
+    goToShop,
     beginRaid,
     selectCharacter,
     startGame,
@@ -815,6 +889,7 @@ export function useGameEngine() {
     loadSavedGame,
     clearSave,
     dismissCK3Cutscene,
+    buyShopItem,
     lastSavedAt,
     ZONES,
   };

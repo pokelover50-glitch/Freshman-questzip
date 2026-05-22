@@ -1,4 +1,4 @@
-import { useGameEngine } from "./game/engine";
+import { useGameEngine, SHOP_ITEMS } from "./game/engine";
 import { CHARACTER_CLASSES } from "./game/characters";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -1023,13 +1023,24 @@ function GameContent() {
                 )}
               </div>
 
-              <button
-                className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-                onClick={game.goToTitle}
-                data-testid="button-back-title"
-              >
-                Back to Title
-              </button>
+              <div className="flex items-center justify-between w-full max-w-sm px-1">
+                <button
+                  className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                  onClick={game.goToTitle}
+                  data-testid="button-back-title"
+                >
+                  Back to Title
+                </button>
+                <button
+                  className="flex items-center gap-1.5 text-sm font-serif text-yellow-500/80 hover:text-yellow-400 transition-colors"
+                  onClick={game.goToShop}
+                  data-testid="button-shop"
+                >
+                  <span>🪙</span>
+                  <span>{state.gold.toLocaleString()} Gold</span>
+                  <span className="ml-1 text-xs text-muted-foreground/50">· Shop</span>
+                </button>
+              </div>
             </motion.div>
           )}
 
@@ -1890,6 +1901,61 @@ function GameContent() {
               >
                 {state.activeRaidId === "tower" ? "Leave Tower" : "Try Again"}
               </Button>
+            </motion.div>
+          )}
+
+          {/* ── SHOP ── */}
+          {state.phase === "shop" && (
+            <motion.div
+              key="shop"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="flex flex-col items-center text-center space-y-8 py-16"
+            >
+              <div className="space-y-2">
+                <h2 className="text-5xl font-serif font-bold text-primary tracking-tight">The Shop</h2>
+                <div className="flex items-center justify-center gap-2 text-yellow-400 font-serif text-xl">
+                  <span>🪙</span>
+                  <span>{state.gold.toLocaleString()} Gold</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 w-full max-w-sm">
+                {SHOP_ITEMS.map((item) => {
+                  const canAfford = state.gold >= item.price;
+                  return (
+                    <div
+                      key={item.id}
+                      className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${canAfford ? "border-border bg-card/60 hover:border-primary/40" : "border-border/30 bg-background/20 opacity-50"}`}
+                    >
+                      <div className="flex items-center gap-3 text-left">
+                        <span className="text-3xl">{item.emoji}</span>
+                        <div>
+                          <p className="font-serif font-bold text-foreground">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={!canAfford}
+                        className="font-serif shrink-0 bg-yellow-600 hover:bg-yellow-500 text-white disabled:opacity-40"
+                        onClick={() => game.buyShopItem(item.id)}
+                      >
+                        🪙 {item.price.toLocaleString()}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                onClick={game.goToMainMenu}
+              >
+                ← Back to Menu
+              </button>
             </motion.div>
           )}
         </AnimatePresence>

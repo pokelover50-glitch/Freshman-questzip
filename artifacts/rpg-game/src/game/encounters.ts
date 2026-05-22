@@ -1513,3 +1513,48 @@ export const RAID_ENCOUNTERS: Record<string, Encounter[]> = {
   ],
   "tower": TOWER_ENCOUNTERS,
 };
+
+export const GOLD_REWARDS: Record<string, number> = {
+  // ── Zone mobs ──
+  "seventh-grader": 2,
+  "eighth-grader": 3,
+  "fellow-freshman": 3,
+  "sophomore": 4,
+  "junior": 4,
+  // ── Zone bosses ──
+  "boss-bradley": 8,
+  "boss-westen": 12,
+  "boss-barrett": 20,
+  // ── Raid 1 — Hayes ──
+  "raid-indian-freshman": 10,
+  "raid-indian-sophomore": 10,
+  "raid-indian-junior": 20,
+  "raid-indian-senior": 20,
+  "raid-jayden": 30,
+  "raid-boss-hayes": 50,
+  // ── Raid 2 — Cronin ──
+  "raid-ap-freshman": 35,
+  "raid-ap-sophomore": 35,
+  "raid-ap-junior": 40,
+  "raid-ap-senior": 40,
+  "raid-baseball-jock": 60,
+  "raid-teachers-pet": 60,
+  "raid-mob-matteo": 75,
+  "raid-boss-cronin": 125,
+  // ── Raid 3 — Bryant ──
+  "raid-yn-freshman": 50,
+  "raid-yn-sophomore": 50,
+  "raid-yn-junior": 70,
+  "raid-yn-senior": 70,
+  "raid-yn-leader": 85,
+  "raid-mob-devon": 100,
+  "raid-mob-bryce": 115,
+  "raid-boss-bryant": 125,
+  "raid-boss-ck3-barrett": 300,
+  // ── Tower bosses (regular tower mobs use base id × 3 in engine) ──
+  "tower-boss-sterlin": 150,
+  "tower-boss-corrupted-freshman": 500,
+  "tower-boss-marcello": 2000,
+  "tower-boss-lunch-lady": 7500,
+  "tower-boss-creator": 20000,
+};

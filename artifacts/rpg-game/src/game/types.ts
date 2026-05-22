@@ -88,7 +88,8 @@ export type GamePhase =
   | "raid-complete"
   | "game-over"
   | "ck3-cutscene"
-  | "tower-select";
+  | "tower-select"
+  | "shop";
 
 export interface GameState {
   phase: GamePhase;
@@ -118,4 +119,5 @@ export interface GameState {
   activeRaidId: string | null;
   doomscrollerUnlocked: boolean;
   towerCrushed: boolean;
+  gold: number;
 }
