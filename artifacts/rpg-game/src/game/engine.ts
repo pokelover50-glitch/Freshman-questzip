@@ -689,18 +689,18 @@ export function useGameEngine() {
 
         // ── XP reward ────────────────────────────────────────────────────────
         // Level-based difficulty scaling for XP earned:
-        // Levels 1-40: easy (0.4-0.65x), 40-50: ramps up (0.65-1.0x),
-        // 50-70: difficult (1.0-2.0x), 70+: very hard (2.0x)
+        // Levels 1-40: easy (2.0-1.0x), 40-50: harder (1.0-0.65x),
+        // 50-70: hard (0.65-0.4x), 70+: super hard (0.4x)
         const lvl = s.level;
         let levelDiffMult: number;
         if (lvl <= 40) {
-          levelDiffMult = 0.4 + 0.25 * ((lvl - 1) / 39);
+          levelDiffMult = 2.0 - 1.0 * ((lvl - 1) / 39);
         } else if (lvl <= 50) {
-          levelDiffMult = 0.65 + 0.35 * ((lvl - 40) / 10);
+          levelDiffMult = 1.0 - 0.35 * ((lvl - 40) / 10);
         } else if (lvl <= 70) {
-          levelDiffMult = 1.0 + 1.0 * ((lvl - 50) / 20);
+          levelDiffMult = 0.65 - 0.25 * ((lvl - 50) / 20);
         } else {
-          levelDiffMult = 2.0;
+          levelDiffMult = 0.4;
         }
 
         let xpEarned = 0;
