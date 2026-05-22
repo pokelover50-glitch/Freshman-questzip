@@ -1942,11 +1942,15 @@ function GameContent() {
               )}
 
               <div className="space-y-3 w-full max-w-sm">
-                <h2 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">Enemies Defeated</h2>
+                <h2 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">
+                  {state.activeRaidId === "hayes" || state.activeRaidId === "cronin" ? "Enemies Freed" : "Enemies Defeated"}
+                </h2>
                 {state.defeatedBosses.map((boss, i) => (
                   <div key={i} className="flex items-center justify-between font-serif text-base border-b border-border/50 pb-2">
                     <span className="text-foreground">{boss}</span>
-                    <span className="text-accent text-sm">DEFEATED</span>
+                    <span className="text-accent text-sm">
+                      {state.activeRaidId === "hayes" || state.activeRaidId === "cronin" ? "FREED" : "DEFEATED"}
+                    </span>
                   </div>
                 ))}
               </div>
