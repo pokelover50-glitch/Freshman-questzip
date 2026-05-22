@@ -2142,7 +2142,7 @@ function GameContent() {
                   <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase text-left">Sell Items</h3>
                   <div className="flex flex-col gap-2">
                     {state.inventory.map((item) => {
-                      const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0);
+                      const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0, item.def.id);
                       const isEquipped = item.def.id === state.equippedItemId || item.def.id === state.equippedArmorId;
                       return (
                         <div key={item.instanceId} className="rounded-xl border border-border/50 bg-background/20 p-3 flex items-center justify-between gap-3">

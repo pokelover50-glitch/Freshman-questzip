@@ -23,11 +23,20 @@ export function getUpgradeCost(rarityColor: string | undefined, currentUpgradeLe
   return Math.floor(getUpgradeBaseCost(rarityColor) * Math.pow(2.25, currentUpgradeLevel));
 }
 
-export function getSellValue(rarityColor: string | undefined, upgradeLevel: number): number {
-  const base = Math.floor(getUpgradeBaseCost(rarityColor) * 0.5);
+const CHEST_SELL_PRICES: Record<string, number> = {
+  "wooden-chest": 50,
+  "bronze-chest": 250,
+  "silver-chest": 500,
+};
+
+export function getSellValue(rarityColor: string | undefined, upgradeLevel: number, itemId?: string): number {
+  if (itemId && CHEST_SELL_PRICES[itemId] !== undefined) {
+    return CHEST_SELL_PRICES[itemId];
+  }
+  const base = Math.floor(getUpgradeBaseCost(rarityColor) * 0.35);
   let upgradeGold = 0;
   for (let i = 0; i < (upgradeLevel ?? 0); i++) {
-    upgradeGold += Math.floor(getUpgradeCost(rarityColor, i) * 0.5);
+    upgradeGold += Math.floor(getUpgradeCost(rarityColor, i) * 0.25);
   }
   return base + upgradeGold;
 }
