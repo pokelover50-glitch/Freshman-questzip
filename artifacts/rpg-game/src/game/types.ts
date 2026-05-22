@@ -136,4 +136,6 @@ export interface GameState {
   micahVisitedFloors: number[];
   activeGreaseId: string | null;
   greaseChoicesLeft: number;
+  ngPlus: number;
+  corruptedFreshmanDefeated: boolean;
 }

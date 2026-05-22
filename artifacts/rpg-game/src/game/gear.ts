@@ -93,6 +93,72 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     barrettMultiplier: 2,
     rarityColor: "#fb923c",
   },
+  // ── NG+ exclusive weapons ────────────────────────────────────────────────
+  {
+    id: "saber-of-iowa",
+    name: "Saber of Iowa",
+    emoji: "⚡",
+    description: "+315 damage on any choice. NG+ exclusive.",
+    damage: 315,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: false,
+    rarityColor: "#e879f9",
+  },
+  {
+    id: "cmilk-katana",
+    name: "CMilk Katana",
+    emoji: "🥛",
+    description: "+699 damage on any choice. NG+ exclusive.",
+    damage: 699,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: false,
+    rarityColor: "#f472b6",
+  },
+  {
+    id: "divine-daggers",
+    name: "Divine Daggers",
+    emoji: "🗡️",
+    description: "+1000 damage on any choice. NG+ exclusive.",
+    damage: 1000,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: false,
+    rarityColor: "#38bdf8",
+  },
+  {
+    id: "void-rapier",
+    name: "Void Rapier",
+    emoji: "🌀",
+    description: "+3333 damage on any choice. NG+ exclusive.",
+    damage: 3333,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: false,
+    rarityColor: "#f43f5e",
+  },
+  {
+    id: "wand-67",
+    name: "67 Wand",
+    emoji: "🪄",
+    description: "+670 damage. Secret: Doomscroller one-shot rises to 41%.",
+    damage: 670,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isWeapon: true,
+    scalesWithZone: false,
+    rarityColor: "#6366f1",
+  },
 ];
 
 type ChestLootEntry = { item: GearItemDef; weight: number };
@@ -177,6 +243,33 @@ export const ARMOR_ITEMS: GearItemDef[] = [
     isArmor: true,
     hpBonus: 250,
     rarityColor: "#fb923c",
+  },
+  // ── NG+ exclusive armors ─────────────────────────────────────────────────
+  {
+    id: "vollys-chestplate",
+    name: "Volly's Chestplate",
+    emoji: "🪬",
+    description: "+500 Max HP while equipped. NG+ exclusive.",
+    damage: 0,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isArmor: true,
+    hpBonus: 500,
+    rarityColor: "#e879f9",
+  },
+  {
+    id: "divine-armor",
+    name: "Divine Armor",
+    emoji: "✨",
+    description: "+1000 Max HP while equipped. NG+ exclusive.",
+    damage: 0,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    isArmor: true,
+    hpBonus: 1000,
+    rarityColor: "#38bdf8",
   },
 ];
 
@@ -339,6 +432,35 @@ export const CHEST_ITEMS: GearItemDef[] = [
   },
 ];
 
+export const NG_CHEST_ITEMS: GearItemDef[] = [
+  {
+    id: "gold-chest",
+    name: "Gold Chest",
+    emoji: "🏆",
+    description: "An NG+ chest. Contains powerful exclusive gear.",
+    damage: 0,
+    target: "any",
+    isFromBoss: true,
+    dropChance: 0.95,
+    isChest: true,
+    stackable: true,
+    rarityColor: "#fbbf24",
+  },
+  {
+    id: "obsidian-chest",
+    name: "Obsidian Chest",
+    emoji: "🖤",
+    description: "An ultra-rare NG+ chest. Contains god-tier gear.",
+    damage: 0,
+    target: "any",
+    isFromBoss: true,
+    dropChance: 0.05,
+    isChest: true,
+    stackable: true,
+    rarityColor: "#6366f1",
+  },
+];
+
 const FOOD_DROP_MOB_IDS = new Set([
   "seventh-grader",
   "eighth-grader",
@@ -410,4 +532,42 @@ export function rollTowerBossDrops(): GearItemInstance[] {
   const drops = [makeInstance(chest)];
   if (Math.random() < 0.5) drops.push(makeInstance(ARMOR_CHEST));
   return drops;
+}
+
+// ── NG+ chest loot pools ─────────────────────────────────────────────────────
+function ngwById(id: string): GearItemDef {
+  return CHEST_WEAPON_ITEMS.find((w) => w.id === id)!;
+}
+function ngaById(id: string): GearItemDef {
+  return ARMOR_ITEMS.find((a) => a.id === id)!;
+}
+
+const NG_GOLD_POOL: ChestLootEntry[] = [
+  { item: ngaById("vollys-chestplate"), weight: 80 },
+  { item: ngwById("saber-of-iowa"), weight: 15 },
+  { item: ngwById("cmilk-katana"), weight: 5 },
+];
+
+const NG_OBSIDIAN_POOL: ChestLootEntry[] = [
+  { item: ngaById("divine-armor"), weight: 70 },
+  { item: ngwById("divine-daggers"), weight: 27 },
+  { item: ngwById("void-rapier"), weight: 2.75 },
+  { item: ngwById("wand-67"), weight: 0.25 },
+];
+
+export function rollNgPlusChestDrop(chestId: string): GearItemDef | null {
+  const pool = chestId === "gold-chest" ? NG_GOLD_POOL : chestId === "obsidian-chest" ? NG_OBSIDIAN_POOL : null;
+  if (!pool) return null;
+  const totalWeight = pool.reduce((sum, e) => sum + e.weight, 0);
+  let roll = Math.random() * totalWeight;
+  for (const entry of pool) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.item;
+  }
+  return pool[pool.length - 1].item;
+}
+
+export function rollNgPlusBossChest(): GearItemInstance {
+  const chest = Math.random() < 0.95 ? NG_CHEST_ITEMS[0] : NG_CHEST_ITEMS[1];
+  return makeInstance(chest);
 }

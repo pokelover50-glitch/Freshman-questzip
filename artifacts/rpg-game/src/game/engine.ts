@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItemInstance } from "./types";
 import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS, GOLD_REWARDS, XP_REWARDS, xpForLevel } from "./encounters";
-import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollTowerBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS, GREASE_ITEMS } from "./gear";
+import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollTowerBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS, GREASE_ITEMS, NG_CHEST_ITEMS, rollNgPlusBossChest, rollNgPlusChestDrop } from "./gear";
 
 import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, getGlobalDoomscrollerUnlocked, setGlobalDoomscrollerUnlocked, type SaveData, type SaveSlot } from "./saveLoad";
 
@@ -15,6 +15,11 @@ export function getUpgradeBaseCost(rarityColor: string | undefined): number {
     case "#cd7f32": return 100;   // bronze armor
     case "#9ca3af": return 250;   // silver armor
     case "#fbbf24": return 1000;  // gold armor
+    case "#e879f9": return 5000;  // NG+ fuchsia
+    case "#f472b6": return 5000;  // NG+ pink
+    case "#38bdf8": return 8000;  // NG+ sky/divine
+    case "#f43f5e": return 15000; // NG+ void/rose
+    case "#6366f1": return 10000; // NG+ indigo/67wand
     default: return 50;           // common
   }
 }
@@ -27,6 +32,8 @@ const CHEST_SELL_PRICES: Record<string, number> = {
   "wooden-chest": 50,
   "bronze-chest": 250,
   "silver-chest": 500,
+  "gold-chest": 1750,
+  "obsidian-chest": 12250,
 };
 
 export function getSellValue(rarityColor: string | undefined, upgradeLevel: number, itemId?: string): number {
@@ -39,6 +46,28 @@ export function getSellValue(rarityColor: string | undefined, upgradeLevel: numb
     upgradeGold += Math.floor(getUpgradeCost(rarityColor, i) * 0.25);
   }
   return base + upgradeGold;
+}
+
+// ── NG+ helpers ──────────────────────────────────────────────────────────────
+export function getNgPlusMultiplier(ng: number): number {
+  if (ng <= 0) return 1;
+  let mult = 1;
+  for (let i = 1; i <= ng; i++) {
+    if (i <= 3) mult *= 1.3;
+    else if (i <= 6) mult *= 1.45;
+    else mult *= 2.5;
+  }
+  return mult;
+}
+
+export function getNgPlusGoldReq(currentNg: number): number {
+  return Math.round(10000 * Math.pow(2.5, currentNg));
+}
+
+export function canEnterNgPlus(state: GameState): boolean {
+  const ng = state.ngPlus ?? 0;
+  if (ng >= 10) return false;
+  return (state.crownTaken ?? false) && (state.corruptedFreshmanDefeated ?? false) && state.gold >= getNgPlusGoldReq(ng);
 }
 
 export const SHOP_ITEMS = [
@@ -77,6 +106,31 @@ export const SHOP_ITEMS = [
   },
 ];
 
+export const NG_SHOP_ITEMS = [
+  {
+    id: "gold-chest",
+    name: "Gold Chest",
+    emoji: "🏆",
+    price: 5000,
+    description: "NG+ exclusive. Contains Volly's Chestplate, Saber of Iowa, or CMilk Katana.",
+    make: (): GearItemInstance => ({
+      instanceId: `ng-gold-chest-${Math.random().toString(36).slice(2, 9)}`,
+      def: NG_CHEST_ITEMS[0],
+    }),
+  },
+  {
+    id: "obsidian-chest",
+    name: "Obsidian Chest",
+    emoji: "🖤",
+    price: 35000,
+    description: "NG+ exclusive. Contains Divine Armor, Divine Daggers, Void Rapier, or 67 Wand.",
+    make: (): GearItemInstance => ({
+      instanceId: `ng-obsidian-chest-${Math.random().toString(36).slice(2, 9)}`,
+      def: NG_CHEST_ITEMS[1],
+    }),
+  },
+];
+
 const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
   "defeat-10-mobs": () => ({
     instanceId: `sandwich-claim-${Math.random().toString(36).slice(2, 9)}`,
@@ -101,7 +155,7 @@ const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
 };
 
 function getInitialState(
-  preserve?: Pick<GameState, "barrettDefeated" | "crownTaken" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked" | "towerCrushed" | "gold" | "level" | "xp">
+  preserve?: Pick<GameState, "barrettDefeated" | "crownTaken" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked" | "towerCrushed" | "gold" | "level" | "xp" | "ngPlus" | "corruptedFreshmanDefeated">
 ): GameState {
   return {
     phase: "title",
@@ -143,6 +197,8 @@ function getInitialState(
     micahVisitedFloors: [],
     activeGreaseId: null,
     greaseChoicesLeft: 0,
+    ngPlus: preserve?.ngPlus ?? 0,
+    corruptedFreshmanDefeated: preserve?.corruptedFreshmanDefeated ?? false,
   };
 }
 
@@ -250,6 +306,8 @@ export function useGameEngine() {
       micahVisitedFloors: s.micahVisitedFloors ?? [],
       activeGreaseId: s.activeGreaseId ?? null,
       greaseChoicesLeft: s.greaseChoicesLeft ?? 0,
+      ngPlus: s.ngPlus ?? 0,
+      corruptedFreshmanDefeated: s.corruptedFreshmanDefeated ?? false,
     }));
   }, []);
 
@@ -370,6 +428,8 @@ export function useGameEngine() {
       gold: state.gold,
       level: state.level,
       xp: state.xp,
+      ngPlus: state.ngPlus ?? 0,
+      corruptedFreshmanDefeated: state.corruptedFreshmanDefeated ?? false,
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, activeSlot]);
@@ -407,13 +467,14 @@ export function useGameEngine() {
   const startGame = useCallback(() => {
     setState((s) => {
       const firstEncounter = ZONES[0][0];
+      const ngMult = getNgPlusMultiplier(s.ngPlus ?? 0);
       return {
         ...s,
         phase: "encounter",
         zoneIndex: 0,
         encounterIndex: 0,
         roundIndex: 0,
-        enemyHp: firstEncounter.enemyMaxHp,
+        enemyHp: Math.round(firstEncounter.enemyMaxHp * ngMult),
         lastOutcome: null,
         showOutcome: false,
         pendingDrops: [],
@@ -430,13 +491,14 @@ export function useGameEngine() {
       if (!s.activeRaidId) return s;
       const encounters = RAID_ENCOUNTERS[s.activeRaidId];
       if (!encounters || encounters.length === 0) return s;
+      const ngMult = getNgPlusMultiplier(s.ngPlus ?? 0);
       return {
         ...s,
         phase: "encounter",
         encounterIndex: 0,
         roundIndex: 0,
         playerHp: s.playerMaxHp,
-        enemyHp: encounters[0].enemyMaxHp,
+        enemyHp: Math.round(encounters[0].enemyMaxHp * ngMult),
         lastOutcome: null,
         showOutcome: false,
         pendingDrops: [],
@@ -459,9 +521,11 @@ export function useGameEngine() {
 
       // Scale player's attack damage by zone (1.1x per zone, base at zone 0) — raids use zone 0 scale
       const zoneMultiplier = s.activeRaidId ? 1 : Math.pow(1.1, s.zoneIndex);
-      const scaledEnemyDamage = Math.round(choice.enemyDamage * zoneMultiplier);
+      const ngMult = getNgPlusMultiplier(s.ngPlus ?? 0);
+      // NG+ scales enemy damage (player takes more)
+      const scaledEnemyDamage = Math.round(choice.enemyDamage * zoneMultiplier * ngMult);
 
-      const { enemyDamage, playerDamage: rawPlayerDamage, healAmount, abilityMessage } =
+      let { enemyDamage, playerDamage: rawPlayerDamage, healAmount, abilityMessage } =
         applyClassAbility(
           s.selectedClass,
           scaledEnemyDamage,
@@ -470,6 +534,15 @@ export function useGameEngine() {
           currentEncounter.enemyMaxHp,
           currentEncounter.id,
         );
+
+      // ── 67 Wand: boost one-shot from 6.7% → 41% when equipped ─────────────
+      if (s.selectedClass.ability === "random-insta-kill" && s.equippedItemId === "wand-67") {
+        const alreadyOneShot = enemyDamage > currentEncounter.enemyMaxHp;
+        if (!alreadyOneShot && Math.random() < 0.367) {
+          enemyDamage = currentEncounter.enemyMaxHp + 9999;
+          abilityMessage = "67 Wand × 67 Freshman — total annihilation!";
+        }
+      }
 
       // ── Lightning grease: stun — negate all incoming player damage ─────────
       const lightningActive = s.activeGreaseId === "lightning-grease" && s.greaseChoicesLeft > 0;
@@ -649,6 +722,14 @@ export function useGameEngine() {
           rawDrops = [...rawDrops, rollDoomscrollerChest()];
         }
 
+        // NG+1+: boss kills drop an extra NG+ chest (95% gold / 5% obsidian)
+        if ((s.ngPlus ?? 0) >= 1 && currentEncounter.isBoss) {
+          rawDrops = [...rawDrops, rollNgPlusBossChest()];
+        }
+
+        // Track Corrupted Freshman defeat for NG+ unlock condition
+        const isCorruptedFreshman = currentEncounter.id === "tower-boss-corrupted-freshman";
+
         const existingNonStackableIds = new Set(
           s.inventory.filter((i) => !i.def.stackable).map((i) => i.def.id)
         );
@@ -756,6 +837,7 @@ export function useGameEngine() {
               unclaimedAchievements: newUnclaimedAchievements,
               crownTaken: isCK3Barrett ? true : s.crownTaken,
               towerCrushed: isTower ? true : s.towerCrushed,
+              corruptedFreshmanDefeated: isCorruptedFreshman ? true : s.corruptedFreshmanDefeated,
               gold: newGold,
               level: newLevel,
               xp: newXp,
@@ -787,12 +869,13 @@ export function useGameEngine() {
             }
           }
 
+          const ngMultR = getNgPlusMultiplier(s.ngPlus ?? 0);
           return {
             ...s,
             phase: showVendor ? "vendor" : "encounter",
             encounterIndex: newEncounterIndex,
             roundIndex: 0,
-            enemyHp: newEncounter.enemyMaxHp,
+            enemyHp: Math.round(newEncounter.enemyMaxHp * ngMultR),
             showOutcome: false,
             lastOutcome: null,
             inventory: newInventory,
@@ -801,6 +884,7 @@ export function useGameEngine() {
             defeatedBosses: newDefeatedBosses,
             mobsDefeated: newMobsDefeated,
             unclaimedAchievements: newUnclaimedAchievements,
+            corruptedFreshmanDefeated: isCorruptedFreshman ? true : s.corruptedFreshmanDefeated,
             gold: newGold,
             level: newLevel,
             xp: newXp,
@@ -841,13 +925,14 @@ export function useGameEngine() {
         if (isLastInZone) {
           const newZoneIndex = s.zoneIndex + 1;
           const newEncounter = ZONES[newZoneIndex][0];
+          const ngMultC = getNgPlusMultiplier(s.ngPlus ?? 0);
           return {
             ...s,
             phase: "encounter",
             zoneIndex: newZoneIndex,
             encounterIndex: 0,
             roundIndex: 0,
-            enemyHp: newEncounter.enemyMaxHp,
+            enemyHp: Math.round(newEncounter.enemyMaxHp * ngMultC),
             defeatedBosses: newDefeatedBosses,
             showOutcome: false,
             lastOutcome: null,
@@ -865,12 +950,13 @@ export function useGameEngine() {
 
         const newEncounterIndex = s.encounterIndex + 1;
         const newEncounter = ZONES[s.zoneIndex][newEncounterIndex];
+        const ngMultN = getNgPlusMultiplier(s.ngPlus ?? 0);
         return {
           ...s,
           phase: "encounter",
           encounterIndex: newEncounterIndex,
           roundIndex: 0,
-          enemyHp: newEncounter.enemyMaxHp,
+          enemyHp: Math.round(newEncounter.enemyMaxHp * ngMultN),
           showOutcome: false,
           lastOutcome: null,
           inventory: newInventory,
@@ -964,12 +1050,15 @@ export function useGameEngine() {
 
   const equipArmor = useCallback((itemId: string) => {
     setState((s) => {
-      const armorItem = ARMOR_ITEMS.find((a) => a.id === itemId);
+      // Look up armor from inventory (supports NG+ armors not in ARMOR_ITEMS base list)
+      const armorInst = s.inventory.find((i) => i.def.id === itemId && i.def.isArmor);
+      const armorItem = armorInst?.def;
       if (!armorItem || !armorItem.hpBonus) return s;
       let newMaxHp = s.playerMaxHp;
       let newHp = s.playerHp;
       if (s.equippedArmorId) {
-        const oldArmor = ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
+        const oldArmorInst = s.inventory.find((i) => i.def.id === s.equippedArmorId && i.def.isArmor);
+        const oldArmor = oldArmorInst?.def ?? ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
         if (oldArmor?.hpBonus) {
           newMaxHp -= oldArmor.hpBonus;
           newHp = Math.min(newHp, newMaxHp);
@@ -984,7 +1073,8 @@ export function useGameEngine() {
   const unequipArmor = useCallback(() => {
     setState((s) => {
       if (!s.equippedArmorId) return s;
-      const armorItem = ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
+      const armorInst = s.inventory.find((i) => i.def.id === s.equippedArmorId && i.def.isArmor);
+      const armorItem = armorInst?.def ?? ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
       if (!armorItem?.hpBonus) return { ...s, equippedArmorId: null };
       const newMaxHp = s.playerMaxHp - armorItem.hpBonus;
       const newHp = Math.min(s.playerHp, newMaxHp);
@@ -1018,9 +1108,32 @@ export function useGameEngine() {
     setState((s) => ({ ...s, phase: "shop" }));
   }, []);
 
+  const enterNewGamePlus = useCallback(() => {
+    setState((s) => {
+      if (!canEnterNgPlus(s)) return s;
+      const ng = s.ngPlus ?? 0;
+      const cost = getNgPlusGoldReq(ng);
+      return getInitialState({
+        barrettDefeated: s.barrettDefeated,
+        crownTaken: s.crownTaken,
+        completedRaids: s.completedRaids,
+        mobsDefeated: s.mobsDefeated,
+        achievements: s.achievements,
+        unclaimedAchievements: s.unclaimedAchievements,
+        doomscrollerUnlocked: s.doomscrollerUnlocked,
+        towerCrushed: s.towerCrushed,
+        gold: s.gold - cost,
+        level: s.level,
+        xp: s.xp,
+        ngPlus: ng + 1,
+        corruptedFreshmanDefeated: false,
+      });
+    });
+  }, []);
+
   const buyShopItem = useCallback((itemId: string) => {
     setState((s) => {
-      const shopItem = SHOP_ITEMS.find((i) => i.id === itemId);
+      const shopItem = SHOP_ITEMS.find((i) => i.id === itemId) ?? NG_SHOP_ITEMS.find((i) => i.id === itemId);
       if (!shopItem || s.gold < shopItem.price) return s;
       const newItem = shopItem.make();
       return {
@@ -1221,5 +1334,6 @@ export function useGameEngine() {
     upgradeItem,
     lastSavedAt,
     ZONES,
+    enterNewGamePlus,
   };
 }

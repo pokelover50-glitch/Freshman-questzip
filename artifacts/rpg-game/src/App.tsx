@@ -1,4 +1,4 @@
-import { useGameEngine, SHOP_ITEMS, getUpgradeCost, getSellValue } from "./game/engine";
+import { useGameEngine, SHOP_ITEMS, NG_SHOP_ITEMS, getUpgradeCost, getSellValue, canEnterNgPlus, getNgPlusGoldReq, getNgPlusMultiplier } from "./game/engine";
 import { CHARACTER_CLASSES } from "./game/characters";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -1189,6 +1189,38 @@ function GameContent() {
                 )}
               </div>
 
+              {/* ── NG+ Button ── */}
+              {canEnterNgPlus(state) && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="w-full max-w-sm"
+                >
+                  <motion.div
+                    animate={{
+                      boxShadow: [
+                        "0 0 10px -2px rgba(232,121,249,0.4)",
+                        "0 0 28px -2px rgba(232,121,249,0.9)",
+                        "0 0 10px -2px rgba(232,121,249,0.4)",
+                      ],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="rounded-xl"
+                  >
+                    <Button
+                      size="lg"
+                      className="w-full py-8 text-xl font-serif border border-fuchsia-500/60 bg-fuchsia-950/40 hover:bg-fuchsia-900/60 text-fuchsia-300 transition-all"
+                      onClick={game.enterNewGamePlus}
+                    >
+                      ✨ Enter NG+{(state.ngPlus ?? 0) + 1} — 🪙 {getNgPlusGoldReq(state.ngPlus ?? 0).toLocaleString()} Gold
+                    </Button>
+                  </motion.div>
+                  <p className="mt-2 text-xs font-serif text-fuchsia-400/60 italic text-center">
+                    Enemies scale with each cycle. Exclusive gear unlocked.
+                  </p>
+                </motion.div>
+              )}
+
               <div className="flex items-center justify-between w-full max-w-sm px-1">
                 <button
                   className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors"
@@ -1579,10 +1611,15 @@ function GameContent() {
                     max={state.playerMaxHp}
                   />
                   <HpBar
-                    label={currentEncounter.enemyName}
+                    label={(() => {
+                      const ng = state.ngPlus ?? 0;
+                      if (ng >= 5) return `Voided ${currentEncounter.enemyName}`;
+                      if (ng >= 1) return `Corrupted ${currentEncounter.enemyName}`;
+                      return currentEncounter.enemyName;
+                    })()}
                     current={state.enemyHp}
                     value={state.enemyHp}
-                    max={currentEncounter.enemyMaxHp}
+                    max={Math.round(currentEncounter.enemyMaxHp * getNgPlusMultiplier(state.ngPlus ?? 0))}
                     reverse
                   />
                   {(state.equippedItemId || state.equippedArmorId || state.activeGreaseId) && (
@@ -1966,15 +2003,38 @@ function GameContent() {
                 </div>
               </div>
 
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg px-12 py-6 font-serif border-primary/50 hover:bg-primary/10"
-                onClick={game.goToMainMenu}
-                data-testid="button-play-again"
-              >
-                Continue Your Journey
-              </Button>
+              <div className="flex flex-col items-center gap-4 w-full max-w-md">
+                {canEnterNgPlus(state) && (
+                  <motion.div
+                    animate={{
+                      boxShadow: [
+                        "0 0 10px -2px rgba(232,121,249,0.4)",
+                        "0 0 28px -2px rgba(232,121,249,0.9)",
+                        "0 0 10px -2px rgba(232,121,249,0.4)",
+                      ],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="rounded-xl w-full"
+                  >
+                    <Button
+                      size="lg"
+                      className="w-full py-6 text-xl font-serif border border-fuchsia-500/60 bg-fuchsia-950/40 hover:bg-fuchsia-900/60 text-fuchsia-300 transition-all"
+                      onClick={game.enterNewGamePlus}
+                    >
+                      ✨ Enter NG+{(state.ngPlus ?? 0) + 1} — 🪙 {getNgPlusGoldReq(state.ngPlus ?? 0).toLocaleString()} Gold
+                    </Button>
+                  </motion.div>
+                )}
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-lg px-12 py-6 font-serif border-primary/50 hover:bg-primary/10 w-full"
+                  onClick={game.goToMainMenu}
+                  data-testid="button-play-again"
+                >
+                  Continue Your Journey
+                </Button>
+              </div>
             </motion.div>
           )}
 
@@ -2209,6 +2269,40 @@ function GameContent() {
                     </div>
                   );
                 })}
+                {(state.ngPlus ?? 0) >= 1 && (
+                  <>
+                    <div className="flex items-center gap-3 pt-2">
+                      <div className="flex-1 h-px bg-fuchsia-500/30" />
+                      <span className="text-xs font-serif text-fuchsia-400/70 uppercase tracking-widest">NG+ Exclusive</span>
+                      <div className="flex-1 h-px bg-fuchsia-500/30" />
+                    </div>
+                    {NG_SHOP_ITEMS.map((item) => {
+                      const canAfford = state.gold >= item.price;
+                      return (
+                        <div
+                          key={item.id}
+                          className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${canAfford ? "border-fuchsia-500/40 bg-fuchsia-950/30 hover:border-fuchsia-400/80" : "border-fuchsia-500/15 bg-background/20 opacity-50"}`}
+                        >
+                          <div className="flex items-center gap-3 text-left">
+                            <span className="text-3xl">{item.emoji}</span>
+                            <div>
+                              <p className="font-serif font-bold" style={{ color: "#e879f9" }}>{item.name}</p>
+                              <p className="text-xs text-muted-foreground">{item.description}</p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            disabled={!canAfford}
+                            className="font-serif shrink-0 bg-fuchsia-700 hover:bg-fuchsia-600 text-white disabled:opacity-40"
+                            onClick={() => game.buyShopItem(item.id)}
+                          >
+                            🪙 {item.price.toLocaleString()}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </div>
 
               {state.inventory.length > 0 && (
