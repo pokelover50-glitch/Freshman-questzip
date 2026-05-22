@@ -5,6 +5,21 @@ import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollTowerBossDrops, rol
 
 import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, getGlobalDoomscrollerUnlocked, setGlobalDoomscrollerUnlocked, type SaveData, type SaveSlot } from "./saveLoad";
 
+// ── Upgrade cost helpers ─────────────────────────────────────────────────────
+export function getUpgradeBaseCost(rarityColor: string | undefined): number {
+  switch (rarityColor) {
+    case "#4ade80": return 250;   // uncommon
+    case "#60a5fa": return 500;   // rare
+    case "#c084fc": return 1000;  // epic
+    case "#fb923c": return 2500;  // legendary
+    default: return 50;           // common
+  }
+}
+
+export function getUpgradeCost(rarityColor: string | undefined, currentUpgradeLevel: number): number {
+  return Math.floor(getUpgradeBaseCost(rarityColor) * Math.pow(2.25, currentUpgradeLevel));
+}
+
 export const SHOP_ITEMS = [
   {
     id: "sandwich",
@@ -99,6 +114,8 @@ function getInitialState(
     level: preserve?.level ?? 1,
     xp: preserve?.xp ?? 0,
     lastXpEarned: 0,
+    micahSmallPotionsBought: 0,
+    micahBigPotionsBought: 0,
   };
 }
 
@@ -198,6 +215,8 @@ export function useGameEngine() {
       level: s.level ?? 1,
       xp: s.xp ?? 0,
       lastXpEarned: s.lastXpEarned ?? 0,
+      micahSmallPotionsBought: s.micahSmallPotionsBought ?? 0,
+      micahBigPotionsBought: s.micahBigPotionsBought ?? 0,
     }));
   }, []);
 
@@ -242,6 +261,8 @@ export function useGameEngine() {
       level: saveData.state.level ?? 1,
       xp: saveData.state.xp ?? 0,
       lastXpEarned: 0,
+      micahSmallPotionsBought: saveData.state.micahSmallPotionsBought ?? 0,
+      micahBigPotionsBought: saveData.state.micahBigPotionsBought ?? 0,
     };
     if (getGlobalDoomscrollerUnlocked() && !loadedState.achievements.includes("matteo-phone") && !loadedState.unclaimedAchievements.includes("matteo-phone")) {
       loadedState = { ...loadedState, achievements: [...loadedState.achievements, "matteo-phone"] };
@@ -384,6 +405,8 @@ export function useGameEngine() {
         defeatedBosses: [],
         abilityMessage: null,
         itemActionMessage: null,
+        micahSmallPotionsBought: 0,
+        micahBigPotionsBought: 0,
       };
     });
   }, []);
@@ -408,6 +431,8 @@ export function useGameEngine() {
 
       // Add equipped weapon bonus — not multiplied by class abilities
       const equippedWeapon = CHEST_WEAPON_ITEMS.find((w) => w.id === s.equippedItemId);
+      const equippedWeaponInstance = s.inventory.find((i) => i.def.id === s.equippedItemId && i.def.isWeapon);
+      const weaponUpgradeLevel = equippedWeaponInstance?.upgradeLevel ?? 0;
       let weaponBonus = 0;
       if (equippedWeapon) {
         weaponBonus = equippedWeapon.scalesWithZone
@@ -415,6 +440,9 @@ export function useGameEngine() {
           : equippedWeapon.damage;
         if (equippedWeapon.barrettMultiplier && currentEncounter.id === "boss-barrett") {
           weaponBonus *= equippedWeapon.barrettMultiplier;
+        }
+        if (weaponUpgradeLevel > 0) {
+          weaponBonus = Math.floor(weaponBonus * Math.pow(1.2, weaponUpgradeLevel));
         }
       }
 
@@ -659,9 +687,10 @@ export function useGameEngine() {
 
           const newEncounterIndex = s.encounterIndex + 1;
           const newEncounter = raidEncounters[newEncounterIndex];
+          const showVendor = !currentEncounter.isBoss && Math.random() < 0.35;
           return {
             ...s,
-            phase: "encounter",
+            phase: showVendor ? "vendor" : "encounter",
             encounterIndex: newEncounterIndex,
             roundIndex: 0,
             enemyHp: newEncounter.enemyMaxHp,
@@ -901,6 +930,65 @@ export function useGameEngine() {
     });
   }, []);
 
+  const leaveVendor = useCallback(() => {
+    setState((s) => ({ ...s, phase: "encounter", lastOutcome: null, abilityMessage: null, pendingDrops: [] }));
+  }, []);
+
+  const buySmallPotion = useCallback(() => {
+    setState((s) => {
+      if (s.gold < 500 || s.micahSmallPotionsBought >= 3) return s;
+      const healed = Math.min(50, s.playerMaxHp - s.playerHp);
+      return {
+        ...s,
+        gold: s.gold - 500,
+        playerHp: Math.min(s.playerHp + 50, s.playerMaxHp),
+        micahSmallPotionsBought: s.micahSmallPotionsBought + 1,
+        itemActionMessage: healed > 0 ? `Micah's potion restored ${healed} HP.` : null,
+      };
+    });
+  }, []);
+
+  const buyBigPotion = useCallback(() => {
+    setState((s) => {
+      if (s.gold < 1500 || s.micahBigPotionsBought >= 3) return s;
+      const healed = Math.min(150, s.playerMaxHp - s.playerHp);
+      return {
+        ...s,
+        gold: s.gold - 1500,
+        playerHp: Math.min(s.playerHp + 150, s.playerMaxHp),
+        micahBigPotionsBought: s.micahBigPotionsBought + 1,
+        itemActionMessage: healed > 0 ? `Micah's potion restored ${healed} HP.` : null,
+      };
+    });
+  }, []);
+
+  const upgradeItem = useCallback((instanceId: string) => {
+    setState((s) => {
+      const idx = s.inventory.findIndex((i) => i.instanceId === instanceId);
+      if (idx === -1) return s;
+      const item = s.inventory[idx];
+      const currentLevel = item.upgradeLevel ?? 0;
+      if (currentLevel >= 5) return s;
+      const cost = getUpgradeCost(item.def.rarityColor, currentLevel);
+      if (s.gold < cost) return s;
+
+      const newInventory = [...s.inventory];
+      newInventory[idx] = { ...item, upgradeLevel: currentLevel + 1 };
+
+      let newMaxHp = s.playerMaxHp;
+      let newHp = s.playerHp;
+      if (item.def.isArmor && item.def.id === s.equippedArmorId && item.def.hpBonus) {
+        const oldBonus = Math.floor(item.def.hpBonus * Math.pow(1.1, currentLevel));
+        const newBonus = Math.floor(item.def.hpBonus * Math.pow(1.1, currentLevel + 1));
+        const delta = newBonus - oldBonus;
+        newMaxHp = s.playerMaxHp + delta;
+        newHp = Math.min(s.playerHp + delta, newMaxHp);
+      }
+
+      return { ...s, gold: s.gold - cost, inventory: newInventory, playerMaxHp: newMaxHp, playerHp: newHp };
+    });
+  }, []);
+
   return {
     state,
     currentEncounter,
@@ -931,6 +1019,10 @@ export function useGameEngine() {
     clearSave,
     dismissCK3Cutscene,
     buyShopItem,
+    leaveVendor,
+    buySmallPotion,
+    buyBigPotion,
+    upgradeItem,
     lastSavedAt,
     ZONES,
   };

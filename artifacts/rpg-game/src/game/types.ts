@@ -58,6 +58,7 @@ export interface GearItemDef {
 export interface GearItemInstance {
   instanceId: string;
   def: GearItemDef;
+  upgradeLevel?: number;
 }
 
 export interface Encounter {
@@ -89,7 +90,8 @@ export type GamePhase =
   | "game-over"
   | "ck3-cutscene"
   | "tower-select"
-  | "shop";
+  | "shop"
+  | "vendor";
 
 export interface GameState {
   phase: GamePhase;
@@ -123,4 +125,6 @@ export interface GameState {
   level: number;
   xp: number;
   lastXpEarned: number;
+  micahSmallPotionsBought: number;
+  micahBigPotionsBought: number;
 }

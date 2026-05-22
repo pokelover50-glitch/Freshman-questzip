@@ -1,4 +1,4 @@
-import { useGameEngine, SHOP_ITEMS } from "./game/engine";
+import { useGameEngine, SHOP_ITEMS, getUpgradeCost } from "./game/engine";
 import { CHARACTER_CLASSES } from "./game/characters";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -2083,6 +2083,171 @@ function GameContent() {
               </button>
             </motion.div>
           )}
+
+          {/* ── VENDOR (MICAH) ── */}
+          {state.phase === "vendor" && (() => {
+            const equippedWeaponInstance = state.inventory.find(
+              (i) => i.def.id === state.equippedItemId && i.def.isWeapon
+            );
+            const equippedArmorInstance = state.inventory.find(
+              (i) => i.def.id === state.equippedArmorId && i.def.isArmor
+            );
+
+            const renderUpgradeRow = (
+              item: typeof equippedWeaponInstance,
+              label: string
+            ) => {
+              if (!item) {
+                return (
+                  <div className="rounded-xl border border-border/30 bg-background/20 p-4 opacity-40 text-center font-serif text-sm text-muted-foreground">
+                    No {label.toLowerCase()} equipped
+                  </div>
+                );
+              }
+              const level = item.upgradeLevel ?? 0;
+              const maxed = level >= 5;
+              const cost = maxed ? 0 : getUpgradeCost(item.def.rarityColor, level);
+              const canAfford = state.gold >= cost;
+              const rarityLabel =
+                item.def.rarityColor === "#4ade80" ? "Uncommon" :
+                item.def.rarityColor === "#60a5fa" ? "Rare" :
+                item.def.rarityColor === "#c084fc" ? "Epic" :
+                item.def.rarityColor === "#fb923c" ? "Legendary" : "Common";
+              return (
+                <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${!maxed && canAfford ? "border-border bg-card/60 hover:border-primary/40" : "border-border/30 bg-background/20 opacity-60"}`}>
+                  <div className="flex items-center gap-3 text-left flex-1 min-w-0">
+                    <span className="text-2xl shrink-0">{item.def.emoji}</span>
+                    <div className="min-w-0">
+                      <p className="font-serif font-bold text-foreground truncate" style={{ color: item.def.rarityColor }}>{item.def.name}</p>
+                      <p className="text-xs text-muted-foreground">{rarityLabel} · {label}</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {[1,2,3,4,5].map((n) => (
+                          <div key={n} className={`h-1.5 w-5 rounded-full transition-all ${n <= level ? "bg-violet-500" : "bg-muted/40"}`} />
+                        ))}
+                        <span className="text-[10px] font-serif text-muted-foreground ml-1">+{level}/5</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={maxed || !canAfford}
+                    className="font-serif shrink-0 bg-violet-700 hover:bg-violet-600 text-white disabled:opacity-40 text-xs"
+                    onClick={() => game.upgradeItem(item.instanceId)}
+                  >
+                    {maxed ? "MAX" : `🪙 ${cost.toLocaleString()}`}
+                  </Button>
+                </div>
+              );
+            };
+
+            return (
+              <motion.div
+                key="vendor"
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="flex flex-col items-center text-center space-y-6 py-10"
+              >
+                {/* Header */}
+                <div className="space-y-1">
+                  <div className="text-6xl mb-1">🧙</div>
+                  <h2 className="text-4xl font-serif font-bold text-primary tracking-tight">Micah's Stand</h2>
+                  <p className="text-sm font-serif text-muted-foreground italic">"Taking a quick break? Smart move."</p>
+                </div>
+
+                {/* Status bar */}
+                <div className="flex items-center gap-6 text-sm font-serif">
+                  <div className="flex items-center gap-1.5 text-rose-400">
+                    <span>❤️</span>
+                    <span className="font-bold">{state.playerHp}</span>
+                    <span className="text-muted-foreground">/ {state.playerMaxHp}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-yellow-400">
+                    <span>🪙</span>
+                    <span className="font-bold">{state.gold.toLocaleString()}</span>
+                    <span className="text-muted-foreground">Gold</span>
+                  </div>
+                </div>
+
+                {/* Potions */}
+                <div className="w-full max-w-sm space-y-3">
+                  <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase text-left">Healing Potions</h3>
+
+                  {/* Small potion */}
+                  {(() => {
+                    const bought = state.micahSmallPotionsBought;
+                    const remaining = 3 - bought;
+                    const canAfford = state.gold >= 500;
+                    const available = remaining > 0;
+                    return (
+                      <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${available && canAfford ? "border-border bg-card/60 hover:border-emerald-500/40" : "border-border/30 bg-background/20 opacity-50"}`}>
+                        <div className="flex items-center gap-3 text-left">
+                          <span className="text-3xl">🧪</span>
+                          <div>
+                            <p className="font-serif font-bold text-foreground">Small Healing Potion</p>
+                            <p className="text-xs text-muted-foreground">Restores 50 HP instantly · <span className={remaining === 0 ? "text-rose-400" : "text-emerald-400"}>{remaining} left</span></p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={!available || !canAfford}
+                          className="font-serif shrink-0 bg-emerald-700 hover:bg-emerald-600 text-white disabled:opacity-40"
+                          onClick={game.buySmallPotion}
+                        >
+                          🪙 500
+                        </Button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Big potion */}
+                  {(() => {
+                    const bought = state.micahBigPotionsBought;
+                    const remaining = 3 - bought;
+                    const canAfford = state.gold >= 1500;
+                    const available = remaining > 0;
+                    return (
+                      <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${available && canAfford ? "border-border bg-card/60 hover:border-emerald-500/40" : "border-border/30 bg-background/20 opacity-50"}`}>
+                        <div className="flex items-center gap-3 text-left">
+                          <span className="text-3xl">⚗️</span>
+                          <div>
+                            <p className="font-serif font-bold text-foreground">Big Healing Potion</p>
+                            <p className="text-xs text-muted-foreground">Restores 150 HP instantly · <span className={remaining === 0 ? "text-rose-400" : "text-emerald-400"}>{remaining} left</span></p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={!available || !canAfford}
+                          className="font-serif shrink-0 bg-emerald-700 hover:bg-emerald-600 text-white disabled:opacity-40"
+                          onClick={game.buyBigPotion}
+                        >
+                          🪙 1,500
+                        </Button>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Gear upgrades */}
+                <div className="w-full max-w-sm space-y-3">
+                  <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase text-left">Gear Upgrades</h3>
+                  {renderUpgradeRow(equippedWeaponInstance, "Weapon")}
+                  {renderUpgradeRow(equippedArmorInstance, "Armor")}
+                  <p className="text-[10px] text-muted-foreground/50 font-serif text-left">Weapons deal 1.2× more damage · Armor gives 1.1× more HP per upgrade</p>
+                </div>
+
+                {/* Leave */}
+                <Button
+                  size="lg"
+                  className="text-base px-10 py-5 font-serif bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                  onClick={game.leaveVendor}
+                >
+                  Continue Your Run →
+                </Button>
+              </motion.div>
+            );
+          })()}
         </AnimatePresence>
       </div>
 
