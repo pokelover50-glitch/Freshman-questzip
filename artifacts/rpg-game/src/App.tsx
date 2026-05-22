@@ -698,6 +698,21 @@ function GameContent() {
   const [showSavedBadge, setShowSavedBadge] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<SaveSlot | null>(null);
   const [newGameConfirm, setNewGameConfirm] = useState<SaveSlot | null>(null);
+  const [goldPopups, setGoldPopups] = useState<{ id: number; amount: number }[]>([]);
+  const prevGoldRef = useRef<number | null>(null);
+  const goldPopupIdRef = useRef(0);
+
+  // Detect gold increases and trigger floating popup
+  useEffect(() => {
+    const prev = prevGoldRef.current;
+    if (prev !== null && state.gold > prev) {
+      const earned = state.gold - prev;
+      const id = ++goldPopupIdRef.current;
+      setGoldPopups((p) => [...p, { id, amount: earned }]);
+      setTimeout(() => setGoldPopups((p) => p.filter((x) => x.id !== id)), 1600);
+    }
+    prevGoldRef.current = state.gold;
+  }, [state.gold]);
 
   // Pick 4 random choices from the pool each round — cycles through all options over time
   const shuffledChoices = useMemo(() => {
@@ -1423,7 +1438,7 @@ function GameContent() {
                       })()}
                     </div>
                   )}
-                  <div className="col-span-2 flex items-center justify-center gap-3">
+                  <div className="col-span-2 flex items-center justify-between gap-3">
                     <span className="text-xs font-serif tracking-widest text-primary/70 uppercase">
                       {state.activeRaidId === "tower"
                         ? `Tower of Chocolate Milk — Floor ${Math.floor(state.encounterIndex / 10) + 1} · ${state.encounterIndex % 10 + 1}/10`
@@ -1431,18 +1446,46 @@ function GameContent() {
                         ? `${RAID_NAMES[state.activeRaidId] ?? "Raid"} — Encounter ${state.encounterIndex + 1}`
                         : `${ZONE_NAMES[state.zoneIndex]} — Encounter ${state.encounterIndex + 1}`}
                     </span>
-                    <AnimatePresence>
-                      {showSavedBadge && (
+                    <div className="flex items-center gap-2">
+                      <AnimatePresence>
+                        {showSavedBadge && (
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            className="text-[10px] font-serif text-accent/80 border border-accent/30 rounded px-1.5 py-0.5 bg-accent/10"
+                          >
+                            ✓ Saved
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                      <div className="relative flex items-center gap-1 text-xs font-serif text-yellow-500/90 font-semibold">
+                        <span>🪙</span>
                         <motion.span
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                          className="text-[10px] font-serif text-accent/80 border border-accent/30 rounded px-1.5 py-0.5 bg-accent/10"
+                          key={state.gold}
+                          initial={{ scale: 1.3, color: "#facc15" }}
+                          animate={{ scale: 1, color: "rgba(234,179,8,0.9)" }}
+                          transition={{ duration: 0.3 }}
                         >
-                          ✓ Saved
+                          {state.gold.toLocaleString()}
                         </motion.span>
-                      )}
-                    </AnimatePresence>
+                        <AnimatePresence>
+                          {goldPopups.map((popup) => (
+                            <motion.span
+                              key={popup.id}
+                              initial={{ opacity: 1, y: 0, x: "-50%" }}
+                              animate={{ opacity: 0, y: -36, x: "-50%" }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 1.4, ease: "easeOut" }}
+                              className="absolute left-1/2 top-0 pointer-events-none font-serif font-bold text-yellow-400 text-sm whitespace-nowrap drop-shadow-[0_0_6px_rgba(234,179,8,0.8)]"
+                              style={{ transform: "translateX(-50%)" }}
+                            >
+                              +{popup.amount} 🪙
+                            </motion.span>
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
