@@ -968,9 +968,16 @@ function GameContent() {
                         data-testid={`button-slot-${slot}`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground/50 uppercase tracking-widest font-serif">
-                            Slot {slot}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground/50 uppercase tracking-widest font-serif">
+                              Slot {slot}
+                            </span>
+                            {save && (
+                              <span className="text-[10px] font-bold font-serif px-1.5 py-0.5 rounded-full bg-primary/15 text-primary/80 border border-primary/25 uppercase tracking-wide">
+                                Lv. {save.state.level}
+                              </span>
+                            )}
+                          </div>
                           {save && (
                             <span className="text-xs text-primary/70 font-serif group-hover:text-primary transition-colors">
                               Continue →
