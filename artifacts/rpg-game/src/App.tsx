@@ -490,9 +490,20 @@ function InventoryPanel({
                           style={!isEquipped && item.def.rarityColor ? { color: item.def.rarityColor } : undefined}
                         >
                           {item.def.name}
+                          {(item.upgradeLevel ?? 0) > 0 && (
+                            <span className="ml-1.5 text-[10px] font-bold text-violet-400 font-sans">+{item.upgradeLevel}</span>
+                          )}
                           {isEquipped && <span className="ml-2 text-[10px] text-blue-400/80 uppercase tracking-wide font-sans">Equipped</span>}
                         </p>
                         <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
+                        {item.def.hpBonus != null && (
+                          <p className="text-[11px] font-serif text-blue-400/80 mt-0.5">
+                            HP +{Math.floor(item.def.hpBonus * Math.pow(1.1, item.upgradeLevel ?? 0))}
+                            {(item.upgradeLevel ?? 0) > 0 && (
+                              <span className="text-muted-foreground/50 ml-1">(base +{item.def.hpBonus})</span>
+                            )}
+                          </p>
+                        )}
                       </div>
                       <button
                         onClick={() => isEquipped ? onUnequipArmor() : onEquipArmor(item.def.id)}
@@ -2182,6 +2193,16 @@ function GameContent() {
                           {!maxed && (
                             <span className="text-emerald-400/80 ml-1">
                               → {Math.floor(item.def.damage * Math.pow(1.2, level + 1))} next
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      {item.def.hpBonus != null && (
+                        <p className="text-[11px] font-serif text-blue-400/80 mt-0.5">
+                          HP +{Math.floor(item.def.hpBonus * Math.pow(1.1, level))}
+                          {!maxed && (
+                            <span className="text-emerald-400/80 ml-1">
+                              → +{Math.floor(item.def.hpBonus * Math.pow(1.1, level + 1))} next
                             </span>
                           )}
                         </p>
