@@ -6,6 +6,8 @@ const SLOT_KEYS = [
   "freshman-quest-save-3",
 ] as const;
 
+const GLOBAL_DOOMSCROLLER_KEY = "freshman-quest-doomscroller-unlocked";
+
 const LEGACY_KEY = "freshman-quest-save";
 
 export interface SaveData {
@@ -70,6 +72,34 @@ export function hasSlotSave(slot: SaveSlot): boolean {
 export function deleteSlotSave(slot: SaveSlot): void {
   try {
     localStorage.removeItem(slotKey(slot));
+  } catch {
+    // ignore
+  }
+}
+
+export function getGlobalDoomscrollerUnlocked(): boolean {
+  try {
+    return localStorage.getItem(GLOBAL_DOOMSCROLLER_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function setGlobalDoomscrollerUnlocked(): void {
+  try {
+    localStorage.setItem(GLOBAL_DOOMSCROLLER_KEY, "true");
+    ([1, 2, 3] as SaveSlot[]).forEach((slot) => {
+      const save = loadSaveFromSlot(slot);
+      if (save) {
+        save.state.doomscrollerUnlocked = true;
+        if (!save.state.achievements) save.state.achievements = [];
+        if (!save.state.unclaimedAchievements) save.state.unclaimedAchievements = [];
+        if (!save.state.achievements.includes("matteo-phone") && !save.state.unclaimedAchievements.includes("matteo-phone")) {
+          save.state.achievements = [...save.state.achievements, "matteo-phone"];
+        }
+        localStorage.setItem(slotKey(slot), JSON.stringify(save));
+      }
+    });
   } catch {
     // ignore
   }

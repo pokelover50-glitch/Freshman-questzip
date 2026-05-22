@@ -3,7 +3,7 @@ import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItem
 import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS } from "./encounters";
 import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollTowerBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS } from "./gear";
 
-import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, type SaveData, type SaveSlot } from "./saveLoad";
+import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, getGlobalDoomscrollerUnlocked, setGlobalDoomscrollerUnlocked, type SaveData, type SaveSlot } from "./saveLoad";
 
 const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
   "defeat-10-mobs": () => ({
@@ -57,7 +57,7 @@ function getInitialState(
     equippedArmorId: null,
     defeatedByName: null,
     activeRaidId: null,
-    doomscrollerUnlocked: preserve?.doomscrollerUnlocked ?? false,
+    doomscrollerUnlocked: preserve?.doomscrollerUnlocked ?? getGlobalDoomscrollerUnlocked(),
     towerCrushed: preserve?.towerCrushed ?? false,
   };
 }
@@ -151,7 +151,7 @@ export function useGameEngine() {
       equippedItemId: s.equippedItemId ?? null,
       defeatedByName: s.defeatedByName ?? null,
       activeRaidId: s.activeRaidId ?? null,
-      doomscrollerUnlocked: s.doomscrollerUnlocked ?? false,
+      doomscrollerUnlocked: s.doomscrollerUnlocked || getGlobalDoomscrollerUnlocked(),
       crownTaken: s.crownTaken ?? false,
       towerCrushed: s.towerCrushed ?? false,
     }));
@@ -191,10 +191,13 @@ export function useGameEngine() {
       equippedArmorId: saveData.state.equippedArmorId ?? null,
       defeatedByName: saveData.state.defeatedByName ?? null,
       activeRaidId: saveData.state.activeRaidId ?? null,
-      doomscrollerUnlocked: saveData.state.doomscrollerUnlocked ?? false,
+      doomscrollerUnlocked: saveData.state.doomscrollerUnlocked || getGlobalDoomscrollerUnlocked(),
       crownTaken: saveData.state.crownTaken ?? false,
       towerCrushed: saveData.state.towerCrushed ?? false,
     };
+    if (getGlobalDoomscrollerUnlocked() && !loadedState.achievements.includes("matteo-phone") && !loadedState.unclaimedAchievements.includes("matteo-phone")) {
+      loadedState = { ...loadedState, achievements: [...loadedState.achievements, "matteo-phone"] };
+    }
     if (loadedState.phase === "victory" || loadedState.phase === "title" || loadedState.phase === "game-over" || loadedState.phase === "raid-complete" || loadedState.phase === "ck3-cutscene") {
       loadedState = { ...loadedState, phase: "main-menu" };
     }
@@ -770,8 +773,9 @@ export function useGameEngine() {
         achievements: [...s.achievements, id],
         unclaimedAchievements: s.unclaimedAchievements.filter((a) => a !== id),
       };
-      // matteo-phone unlocks the Doomscroller class (no item reward)
+      // matteo-phone unlocks the Doomscroller class globally across all slots (no item reward)
       if (id === "matteo-phone") {
+        setGlobalDoomscrollerUnlocked();
         return { ...newBase, doomscrollerUnlocked: true };
       }
       const rewardFn = ACHIEVEMENT_REWARDS[id];
