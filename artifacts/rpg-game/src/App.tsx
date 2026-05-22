@@ -751,6 +751,7 @@ function GameContent() {
   const [showSavedBadge, setShowSavedBadge] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<SaveSlot | null>(null);
   const [newGameConfirm, setNewGameConfirm] = useState<SaveSlot | null>(null);
+  const [sellConfirm, setSellConfirm] = useState<string | null>(null);
   const [goldPopups, setGoldPopups] = useState<{ id: number; amount: number }[]>([]);
   const prevGoldRef = useRef<number | null>(null);
   const goldPopupIdRef = useRef(0);
@@ -2432,13 +2433,27 @@ function GameContent() {
                                 </p>
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              className="font-serif shrink-0 bg-rose-700 hover:bg-rose-600 text-white text-xs"
-                              onClick={() => game.sellItem(item.instanceId)}
-                            >
-                              🪙 {sellVal.toLocaleString()}
-                            </Button>
+                            {sellConfirm === item.instanceId ? (
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-[10px] font-serif text-muted-foreground whitespace-nowrap">Sell for 🪙{sellVal.toLocaleString()}?</span>
+                                <button
+                                  className="px-2 py-1 rounded text-[10px] font-bold font-serif border border-border/50 text-muted-foreground hover:bg-card transition-colors"
+                                  onClick={() => setSellConfirm(null)}
+                                >No</button>
+                                <button
+                                  className="px-2 py-1 rounded text-[10px] font-bold font-serif bg-rose-700 hover:bg-rose-600 text-white transition-colors"
+                                  onClick={() => { game.sellItem(item.instanceId); setSellConfirm(null); }}
+                                >Yes</button>
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                className="font-serif shrink-0 bg-rose-700 hover:bg-rose-600 text-white text-xs"
+                                onClick={() => setSellConfirm(item.instanceId)}
+                              >
+                                🪙 {sellVal.toLocaleString()}
+                              </Button>
+                            )}
                           </div>
                         );
                       })}
