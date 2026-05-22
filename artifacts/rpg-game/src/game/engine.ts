@@ -116,6 +116,8 @@ function getInitialState(
     lastXpEarned: 0,
     micahSmallPotionsBought: 0,
     micahBigPotionsBought: 0,
+    micahVisitedRun: false,
+    micahVisitedFloors: [],
   };
 }
 
@@ -217,6 +219,8 @@ export function useGameEngine() {
       lastXpEarned: s.lastXpEarned ?? 0,
       micahSmallPotionsBought: s.micahSmallPotionsBought ?? 0,
       micahBigPotionsBought: s.micahBigPotionsBought ?? 0,
+      micahVisitedRun: s.micahVisitedRun ?? false,
+      micahVisitedFloors: s.micahVisitedFloors ?? [],
     }));
   }, []);
 
@@ -263,6 +267,8 @@ export function useGameEngine() {
       lastXpEarned: 0,
       micahSmallPotionsBought: saveData.state.micahSmallPotionsBought ?? 0,
       micahBigPotionsBought: saveData.state.micahBigPotionsBought ?? 0,
+      micahVisitedRun: saveData.state.micahVisitedRun ?? false,
+      micahVisitedFloors: saveData.state.micahVisitedFloors ?? [],
     };
     if (getGlobalDoomscrollerUnlocked() && !loadedState.achievements.includes("matteo-phone") && !loadedState.unclaimedAchievements.includes("matteo-phone")) {
       loadedState = { ...loadedState, achievements: [...loadedState.achievements, "matteo-phone"] };
@@ -407,6 +413,8 @@ export function useGameEngine() {
         itemActionMessage: null,
         micahSmallPotionsBought: 0,
         micahBigPotionsBought: 0,
+        micahVisitedRun: false,
+        micahVisitedFloors: [],
       };
     });
   }, []);
@@ -687,7 +695,24 @@ export function useGameEngine() {
 
           const newEncounterIndex = s.encounterIndex + 1;
           const newEncounter = raidEncounters[newEncounterIndex];
-          const showVendor = !currentEncounter.isBoss && Math.random() < 0.35;
+
+          // ── Micah vendor trigger ─────────────────────────────────────────
+          let showVendor = false;
+          let newMicahVisitedRun = s.micahVisitedRun;
+          let newMicahVisitedFloors = s.micahVisitedFloors;
+          if (!currentEncounter.isBoss) {
+            if (s.activeRaidId === "tower") {
+              const currentFloor = Math.floor(s.encounterIndex / 10);
+              if (!s.micahVisitedFloors.includes(currentFloor) && Math.random() < 0.35) {
+                showVendor = true;
+                newMicahVisitedFloors = [...s.micahVisitedFloors, currentFloor];
+              }
+            } else if (!s.micahVisitedRun && Math.random() < 0.35) {
+              showVendor = true;
+              newMicahVisitedRun = true;
+            }
+          }
+
           return {
             ...s,
             phase: showVendor ? "vendor" : "encounter",
@@ -706,6 +731,8 @@ export function useGameEngine() {
             level: newLevel,
             xp: newXp,
             lastXpEarned: xpEarned,
+            micahVisitedRun: newMicahVisitedRun,
+            micahVisitedFloors: newMicahVisitedFloors,
           };
         }
 

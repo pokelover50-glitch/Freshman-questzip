@@ -127,4 +127,6 @@ export interface GameState {
   lastXpEarned: number;
   micahSmallPotionsBought: number;
   micahBigPotionsBought: number;
+  micahVisitedRun: boolean;
+  micahVisitedFloors: number[];
 }
