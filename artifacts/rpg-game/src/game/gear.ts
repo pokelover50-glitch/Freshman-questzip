@@ -206,6 +206,39 @@ export function rollChestDrop(chestId: string): GearItemDef | null {
   return pool[pool.length - 1].item;
 }
 
+export const GREASE_ITEMS: GearItemDef[] = [
+  {
+    id: "fire-grease",
+    name: "Fire Grease",
+    emoji: "🔥",
+    description: "Apply to equipped weapon. Adds +15% weapon damage for 5 choices.",
+    damage: 0,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    stackable: true,
+    isGrease: true,
+    greaseType: "fire",
+    greaseChoices: 5,
+    rarityColor: "#f97316",
+  },
+  {
+    id: "lightning-grease",
+    name: "Lightning Grease",
+    emoji: "⚡",
+    description: "Apply to equipped weapon. Stuns enemy (negates all incoming damage) for 3 choices.",
+    damage: 0,
+    target: "any",
+    isFromBoss: false,
+    dropChance: 0,
+    stackable: true,
+    isGrease: true,
+    greaseType: "lightning",
+    greaseChoices: 3,
+    rarityColor: "#a78bfa",
+  },
+];
+
 export const MOB_ITEMS: GearItemDef[] = [];
 
 export const FOOD_ITEMS: GearItemDef[] = [

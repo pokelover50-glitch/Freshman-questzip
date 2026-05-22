@@ -404,6 +404,7 @@ function InventoryPanel({
   onEquipArmor,
   onUnequipArmor,
   onOpen,
+  onApplyGrease,
   canUseItems,
   onClose,
 }: {
@@ -416,13 +417,15 @@ function InventoryPanel({
   onEquipArmor: (itemId: string) => void;
   onUnequipArmor: () => void;
   onOpen: (item: GearItemInstance) => void;
+  onApplyGrease: (instanceId: string) => void;
   canUseItems: boolean;
   onClose: () => void;
 }) {
   const chests = inventory.filter((i) => i.def.isChest);
   const weapons = inventory.filter((i) => i.def.isWeapon);
   const armors = inventory.filter((i) => i.def.isArmor);
-  const usables = inventory.filter((i) => !i.def.isChest && !i.def.isWeapon && !i.def.isArmor);
+  const greases = inventory.filter((i) => i.def.isGrease);
+  const usables = inventory.filter((i) => !i.def.isChest && !i.def.isWeapon && !i.def.isArmor && !i.def.isGrease);
 
   return (
     <motion.div
@@ -549,6 +552,34 @@ function InventoryPanel({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {greases.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
+                Grease <span className="normal-case text-muted-foreground/40">(apply to equipped weapon)</span>
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {greases.map((item) => (
+                  <div
+                    key={item.instanceId}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background/40 hover:border-orange-500/40 transition-colors"
+                  >
+                    <span className="text-3xl shrink-0">{item.def.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-serif font-bold text-sm" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>{item.def.name}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
+                    </div>
+                    <button
+                      onClick={() => { onApplyGrease(item.instanceId); onClose(); }}
+                      className="shrink-0 px-3 py-1.5 rounded-md text-xs font-serif font-bold border border-orange-500/50 bg-orange-500/15 text-orange-300 hover:bg-orange-500/25 transition-colors"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -1457,7 +1488,7 @@ function GameContent() {
                     max={currentEncounter.enemyMaxHp}
                     reverse
                   />
-                  {(state.equippedItemId || state.equippedArmorId) && (
+                  {(state.equippedItemId || state.equippedArmorId || state.activeGreaseId) && (
                     <div className="col-span-2 flex items-center justify-center gap-3 flex-wrap">
                       {state.equippedItemId && (() => {
                         const eq = state.inventory.find((i) => i.def.id === state.equippedItemId && i.def.isWeapon);
@@ -1479,6 +1510,14 @@ function GameContent() {
                           </div>
                         ) : null;
                       })()}
+                      {state.activeGreaseId && state.greaseChoicesLeft > 0 && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-orange-500/50 bg-orange-500/10">
+                          <span className="text-sm">{state.activeGreaseId === "fire-grease" ? "🔥" : "⚡"}</span>
+                          <span className="text-[10px] font-serif font-bold text-orange-300">
+                            {state.activeGreaseId === "fire-grease" ? "Fire" : "Lightning"} · {state.greaseChoicesLeft} left
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="col-span-2 flex items-center justify-between gap-3">
@@ -2237,6 +2276,66 @@ function GameContent() {
                   <p className="text-[10px] text-muted-foreground/50 font-serif text-left">Weapons deal 1.2× more damage · Armor gives 1.1× more HP per upgrade</p>
                 </div>
 
+                {/* Grease items */}
+                <div className="w-full max-w-sm space-y-3">
+                  <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase text-left">Weapon Grease</h3>
+
+                  {/* Fire Grease */}
+                  {(() => {
+                    const bought = state.micahFireGreaseBought;
+                    const remaining = 3 - bought;
+                    const canAfford = state.gold >= 5000;
+                    const available = remaining > 0;
+                    return (
+                      <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${available && canAfford ? "border-border bg-card/60 hover:border-orange-500/40" : "border-border/30 bg-background/20 opacity-50"}`}>
+                        <div className="flex items-center gap-3 text-left">
+                          <span className="text-3xl">🔥</span>
+                          <div>
+                            <p className="font-serif font-bold text-foreground">Fire Grease</p>
+                            <p className="text-xs text-muted-foreground">+15% weapon dmg for 5 choices · <span className={remaining === 0 ? "text-rose-400" : "text-orange-400"}>{remaining} left</span></p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={!available || !canAfford}
+                          className="font-serif shrink-0 bg-orange-700 hover:bg-orange-600 text-white disabled:opacity-40"
+                          onClick={game.buyFireGrease}
+                        >
+                          🪙 5,000
+                        </Button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Lightning Grease */}
+                  {(() => {
+                    const bought = state.micahLightningGreaseBought;
+                    const remaining = 2 - bought;
+                    const canAfford = state.gold >= 15000;
+                    const available = remaining > 0;
+                    return (
+                      <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${available && canAfford ? "border-border bg-card/60 hover:border-violet-500/40" : "border-border/30 bg-background/20 opacity-50"}`}>
+                        <div className="flex items-center gap-3 text-left">
+                          <span className="text-3xl">⚡</span>
+                          <div>
+                            <p className="font-serif font-bold text-foreground">Lightning Grease</p>
+                            <p className="text-xs text-muted-foreground">Stun enemy (no dmg) for 3 choices · <span className={remaining === 0 ? "text-rose-400" : "text-violet-400"}>{remaining} left</span></p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={!available || !canAfford}
+                          className="font-serif shrink-0 bg-violet-700 hover:bg-violet-600 text-white disabled:opacity-40"
+                          onClick={game.buyLightningGrease}
+                        >
+                          🪙 15,000
+                        </Button>
+                      </div>
+                    );
+                  })()}
+                  <p className="text-[10px] text-muted-foreground/50 font-serif text-left">Grease goes to your backpack — equip a weapon then apply it from the backpack.</p>
+                </div>
+
                 {/* Leave */}
                 <Button
                   size="lg"
@@ -2280,6 +2379,7 @@ function GameContent() {
             onEquipArmor={game.equipArmor}
             onUnequipArmor={game.unequipArmor}
             onOpen={(item) => setSpinnerChest(item)}
+            onApplyGrease={game.applyGrease}
             canUseItems={state.phase === "encounter" && !state.showOutcome}
             onClose={() => setShowBackpack(false)}
           />

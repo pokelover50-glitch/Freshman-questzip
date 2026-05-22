@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItemInstance } from "./types";
 import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS, GOLD_REWARDS, XP_REWARDS, xpForLevel } from "./encounters";
-import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollTowerBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS } from "./gear";
+import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollTowerBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS, GREASE_ITEMS } from "./gear";
 
 import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, getGlobalDoomscrollerUnlocked, setGlobalDoomscrollerUnlocked, type SaveData, type SaveSlot } from "./saveLoad";
 
@@ -116,8 +116,12 @@ function getInitialState(
     lastXpEarned: 0,
     micahSmallPotionsBought: 0,
     micahBigPotionsBought: 0,
+    micahFireGreaseBought: 0,
+    micahLightningGreaseBought: 0,
     micahVisitedRun: false,
     micahVisitedFloors: [],
+    activeGreaseId: null,
+    greaseChoicesLeft: 0,
   };
 }
 
@@ -219,8 +223,12 @@ export function useGameEngine() {
       lastXpEarned: s.lastXpEarned ?? 0,
       micahSmallPotionsBought: s.micahSmallPotionsBought ?? 0,
       micahBigPotionsBought: s.micahBigPotionsBought ?? 0,
+      micahFireGreaseBought: s.micahFireGreaseBought ?? 0,
+      micahLightningGreaseBought: s.micahLightningGreaseBought ?? 0,
       micahVisitedRun: s.micahVisitedRun ?? false,
       micahVisitedFloors: s.micahVisitedFloors ?? [],
+      activeGreaseId: s.activeGreaseId ?? null,
+      greaseChoicesLeft: s.greaseChoicesLeft ?? 0,
     }));
   }, []);
 
@@ -267,8 +275,12 @@ export function useGameEngine() {
       lastXpEarned: 0,
       micahSmallPotionsBought: saveData.state.micahSmallPotionsBought ?? 0,
       micahBigPotionsBought: saveData.state.micahBigPotionsBought ?? 0,
+      micahFireGreaseBought: saveData.state.micahFireGreaseBought ?? 0,
+      micahLightningGreaseBought: saveData.state.micahLightningGreaseBought ?? 0,
       micahVisitedRun: saveData.state.micahVisitedRun ?? false,
       micahVisitedFloors: saveData.state.micahVisitedFloors ?? [],
+      activeGreaseId: saveData.state.activeGreaseId ?? null,
+      greaseChoicesLeft: saveData.state.greaseChoicesLeft ?? 0,
     };
     if (getGlobalDoomscrollerUnlocked() && !loadedState.achievements.includes("matteo-phone") && !loadedState.unclaimedAchievements.includes("matteo-phone")) {
       loadedState = { ...loadedState, achievements: [...loadedState.achievements, "matteo-phone"] };
@@ -413,6 +425,8 @@ export function useGameEngine() {
         itemActionMessage: null,
         micahSmallPotionsBought: 0,
         micahBigPotionsBought: 0,
+        micahFireGreaseBought: 0,
+        micahLightningGreaseBought: 0,
         micahVisitedRun: false,
         micahVisitedFloors: [],
       };
@@ -427,7 +441,22 @@ export function useGameEngine() {
       const zoneMultiplier = s.activeRaidId ? 1 : Math.pow(1.1, s.zoneIndex);
       const scaledEnemyDamage = Math.round(choice.enemyDamage * zoneMultiplier);
 
-      const { enemyDamage, playerDamage, healAmount, abilityMessage } =
+      // ── Level-based difficulty scaling for player damage received ──────────
+      // Levels 1-40: easy (0.4-0.65x), 40-50: ramps up (0.65-1.0x),
+      // 50-70: difficult (1.0-2.0x), 70+: very hard (2.0x)
+      const lvl = s.level;
+      let levelDiffMult: number;
+      if (lvl <= 40) {
+        levelDiffMult = 0.4 + 0.25 * ((lvl - 1) / 39);
+      } else if (lvl <= 50) {
+        levelDiffMult = 0.65 + 0.35 * ((lvl - 40) / 10);
+      } else if (lvl <= 70) {
+        levelDiffMult = 1.0 + 1.0 * ((lvl - 50) / 20);
+      } else {
+        levelDiffMult = 2.0;
+      }
+
+      const { enemyDamage, playerDamage: rawPlayerDamage, healAmount, abilityMessage } =
         applyClassAbility(
           s.selectedClass,
           scaledEnemyDamage,
@@ -437,7 +466,11 @@ export function useGameEngine() {
           currentEncounter.id,
         );
 
-      // Add equipped weapon bonus — not multiplied by class abilities
+      // ── Lightning grease: stun — negate all incoming player damage ─────────
+      const lightningActive = s.activeGreaseId === "lightning-grease" && s.greaseChoicesLeft > 0;
+      let playerDamage = lightningActive ? 0 : Math.round(rawPlayerDamage * levelDiffMult);
+
+      // ── Add equipped weapon bonus — not multiplied by class abilities ───────
       const equippedWeapon = CHEST_WEAPON_ITEMS.find((w) => w.id === s.equippedItemId);
       const equippedWeaponInstance = s.inventory.find((i) => i.def.id === s.equippedItemId && i.def.isWeapon);
       const weaponUpgradeLevel = equippedWeaponInstance?.upgradeLevel ?? 0;
@@ -454,17 +487,32 @@ export function useGameEngine() {
         }
       }
 
+      // ── Fire grease: +15% weapon damage ───────────────────────────────────
+      const fireActive = s.activeGreaseId === "fire-grease" && s.greaseChoicesLeft > 0;
+      if (fireActive && weaponBonus > 0) {
+        weaponBonus = Math.round(weaponBonus * 1.15);
+      }
+
       const totalEnemyDamage = enemyDamage + weaponBonus;
+
+      // ── Tick down active grease ────────────────────────────────────────────
+      const newGreaseChoicesLeft = s.greaseChoicesLeft > 0 ? s.greaseChoicesLeft - 1 : 0;
+      const newActiveGreaseId = newGreaseChoicesLeft > 0 ? s.activeGreaseId : null;
 
       const newPlayerHpRaw = Math.max(0, s.playerHp - playerDamage + healAmount);
       const newPlayerHp = Math.min(newPlayerHpRaw, s.playerMaxHp);
       const newEnemyHp = Math.max(0, s.enemyHp - totalEnemyDamage);
+
+      let greaseMsgSuffix = "";
+      if (lightningActive) greaseMsgSuffix = " ⚡ Lightning Grease: stunned — no damage taken!";
+      else if (fireActive) greaseMsgSuffix = ` 🔥 Fire Grease: +15% weapon bonus (${newGreaseChoicesLeft} left)!`;
 
       const modifiedOutcome: ChoiceOutcome = {
         ...choice,
         playerDamage,
         enemyDamage: Math.min(totalEnemyDamage, s.enemyHp),
         healAmount,
+        narrative: choice.narrative + (greaseMsgSuffix ? " " + greaseMsgSuffix : ""),
       };
 
       return {
@@ -475,6 +523,8 @@ export function useGameEngine() {
         showOutcome: true,
         abilityMessage,
         itemActionMessage: null,
+        activeGreaseId: newActiveGreaseId,
+        greaseChoicesLeft: newGreaseChoicesLeft,
       };
     });
   }, [currentEncounter]);
@@ -993,6 +1043,61 @@ export function useGameEngine() {
     });
   }, []);
 
+  const buyFireGrease = useCallback(() => {
+    setState((s) => {
+      if (s.gold < 5000 || s.micahFireGreaseBought >= 3) return s;
+      const greaseDef = GREASE_ITEMS.find((g) => g.id === "fire-grease")!;
+      const newItem: GearItemInstance = {
+        instanceId: `fire-grease-${Math.random().toString(36).slice(2, 9)}`,
+        def: greaseDef,
+      };
+      return {
+        ...s,
+        gold: s.gold - 5000,
+        inventory: [...s.inventory, newItem],
+        micahFireGreaseBought: s.micahFireGreaseBought + 1,
+      };
+    });
+  }, []);
+
+  const buyLightningGrease = useCallback(() => {
+    setState((s) => {
+      if (s.gold < 15000 || s.micahLightningGreaseBought >= 2) return s;
+      const greaseDef = GREASE_ITEMS.find((g) => g.id === "lightning-grease")!;
+      const newItem: GearItemInstance = {
+        instanceId: `lightning-grease-${Math.random().toString(36).slice(2, 9)}`,
+        def: greaseDef,
+      };
+      return {
+        ...s,
+        gold: s.gold - 15000,
+        inventory: [...s.inventory, newItem],
+        micahLightningGreaseBought: s.micahLightningGreaseBought + 1,
+      };
+    });
+  }, []);
+
+  const applyGrease = useCallback((instanceId: string) => {
+    setState((s) => {
+      if (!s.equippedItemId) {
+        return { ...s, itemActionMessage: "You must equip a weapon before applying grease!" };
+      }
+      const idx = s.inventory.findIndex((i) => i.instanceId === instanceId);
+      if (idx === -1) return s;
+      const item = s.inventory[idx];
+      if (!item.def.isGrease || !item.def.greaseChoices) return s;
+      const newInventory = [...s.inventory];
+      newInventory.splice(idx, 1);
+      return {
+        ...s,
+        inventory: newInventory,
+        activeGreaseId: item.def.id,
+        greaseChoicesLeft: item.def.greaseChoices,
+        itemActionMessage: `${item.def.emoji} ${item.def.name} applied to your weapon for ${item.def.greaseChoices} choices!`,
+      };
+    });
+  }, []);
+
   const upgradeItem = useCallback((instanceId: string) => {
     setState((s) => {
       const idx = s.inventory.findIndex((i) => i.instanceId === instanceId);
@@ -1053,6 +1158,9 @@ export function useGameEngine() {
     leaveVendor,
     buySmallPotion,
     buyBigPotion,
+    buyFireGrease,
+    buyLightningGrease,
+    applyGrease,
     upgradeItem,
     lastSavedAt,
     ZONES,

@@ -49,6 +49,9 @@ export interface GearItemDef {
   isChest?: boolean;
   isWeapon?: boolean;
   isArmor?: boolean;
+  isGrease?: boolean;
+  greaseType?: "fire" | "lightning";
+  greaseChoices?: number;
   hpBonus?: number;
   scalesWithZone?: boolean;
   barrettMultiplier?: number;
@@ -127,6 +130,10 @@ export interface GameState {
   lastXpEarned: number;
   micahSmallPotionsBought: number;
   micahBigPotionsBought: number;
+  micahFireGreaseBought: number;
+  micahLightningGreaseBought: number;
   micahVisitedRun: boolean;
   micahVisitedFloors: number[];
+  activeGreaseId: string | null;
+  greaseChoicesLeft: number;
 }
