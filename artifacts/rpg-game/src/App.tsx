@@ -12,7 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import type { GearItemDef, GearItemInstance } from "./game/types";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getAllSlotSaves, deleteSlotSave, formatSaveDate, migrateLegacySave, type SaveSlot } from "./game/saveLoad";
-import { ZONE_NAMES_SHORT } from "./game/encounters";
+import { ZONE_NAMES_SHORT, xpForLevel } from "./game/encounters";
 import { CHEST_LOOT_POOLS, rollChestDrop } from "./game/gear";
 
 const ACHIEVEMENTS = [
@@ -701,6 +701,11 @@ function GameContent() {
   const [goldPopups, setGoldPopups] = useState<{ id: number; amount: number }[]>([]);
   const prevGoldRef = useRef<number | null>(null);
   const goldPopupIdRef = useRef(0);
+  const [xpPopups, setXpPopups] = useState<{ id: number; amount: number }[]>([]);
+  const prevXpRef = useRef<number | null>(null);
+  const xpPopupIdRef = useRef(0);
+  const prevLevelRef = useRef<number | null>(null);
+  const [levelUpBanner, setLevelUpBanner] = useState<number | null>(null);
 
   // Detect gold increases and trigger floating popup
   useEffect(() => {
@@ -713,6 +718,24 @@ function GameContent() {
     }
     prevGoldRef.current = state.gold;
   }, [state.gold]);
+
+  // Detect XP gains and level-ups
+  useEffect(() => {
+    const prevXp = prevXpRef.current;
+    const prevLevel = prevLevelRef.current;
+    if (state.lastXpEarned > 0 && prevXp !== null) {
+      const id = ++xpPopupIdRef.current;
+      setXpPopups((p) => [...p, { id, amount: state.lastXpEarned }]);
+      setTimeout(() => setXpPopups((p) => p.filter((x) => x.id !== id)), 1600);
+    }
+    if (prevLevel !== null && state.level > prevLevel) {
+      setLevelUpBanner(state.level);
+      setTimeout(() => setLevelUpBanner(null), 3000);
+    }
+    prevXpRef.current = state.xp;
+    prevLevelRef.current = state.level;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.lastXpEarned, state.level]);
 
   // Pick 4 random choices from the pool each round — cycles through all options over time
   const shuffledChoices = useMemo(() => {
@@ -1399,6 +1422,26 @@ function GameContent() {
                 exit="exit"
                 className="space-y-5 relative"
               >
+                {/* Level-up banner */}
+                <AnimatePresence>
+                  {levelUpBanner !== null && (
+                    <motion.div
+                      key="level-up-banner"
+                      initial={{ opacity: 0, y: -24, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                      className="absolute inset-x-0 top-0 z-50 flex justify-center pointer-events-none"
+                    >
+                      <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-serif font-bold px-5 py-2 rounded-b-xl shadow-2xl text-base drop-shadow-[0_0_16px_rgba(139,92,246,0.8)]">
+                        <span>⬆</span>
+                        <span>LEVEL UP! You are now Level {levelUpBanner}</span>
+                        <span>⬆</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Top bar */}
                 <div className="grid grid-cols-2 gap-4 items-center bg-card/80 backdrop-blur-md p-4 rounded-xl border border-border shadow-lg">
                   <HpBar
@@ -1485,6 +1528,41 @@ function GameContent() {
                           ))}
                         </AnimatePresence>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* XP bar row */}
+                  <div className="col-span-2 flex items-center gap-2">
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-xs font-serif text-primary/80 font-semibold">Lv.{state.level}</span>
+                    </div>
+                    <div className="relative flex-1 h-2 bg-muted/50 rounded-full overflow-hidden border border-border/40">
+                      <motion.div
+                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full"
+                        initial={false}
+                        animate={{ width: `${Math.min(100, (state.xp / xpForLevel(state.level)) * 100)}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                      />
+                    </div>
+                    <div className="relative flex items-center gap-1 shrink-0">
+                      <span className="text-[10px] font-serif text-muted-foreground">
+                        {state.xp}/{xpForLevel(state.level)} XP
+                      </span>
+                      <AnimatePresence>
+                        {xpPopups.map((popup) => (
+                          <motion.span
+                            key={popup.id}
+                            initial={{ opacity: 1, y: 0, x: "-50%" }}
+                            animate={{ opacity: 0, y: -34, x: "-50%" }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 1.4, ease: "easeOut" }}
+                            className="absolute left-1/2 top-0 pointer-events-none font-serif font-bold text-violet-400 text-sm whitespace-nowrap drop-shadow-[0_0_6px_rgba(139,92,246,0.8)]"
+                            style={{ transform: "translateX(-50%)" }}
+                          >
+                            +{popup.amount} XP
+                          </motion.span>
+                        ))}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </div>

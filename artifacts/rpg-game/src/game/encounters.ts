@@ -1514,6 +1514,56 @@ export const RAID_ENCOUNTERS: Record<string, Encounter[]> = {
   "tower": TOWER_ENCOUNTERS,
 };
 
+// ── XP per level formula: floor(10 × n²) — takes ~2 hrs of tower grinding at level 70 ──
+export function xpForLevel(level: number): number {
+  return Math.floor(10 * level * level);
+}
+
+export const XP_REWARDS: Record<string, number> = {
+  // ── Zone mobs (user-specified) ──
+  "seventh-grader": 5,
+  "eighth-grader": 8,
+  "fellow-freshman": 10,
+  "sophomore": 10,
+  "junior": 12,
+  // ── Zone bosses (user-specified) ──
+  "boss-bradley": 15,
+  "boss-westen": 30,
+  "boss-barrett": 100,
+  // ── Raid 1 — Hayes ──
+  "raid-indian-freshman": 15,
+  "raid-indian-sophomore": 18,
+  "raid-indian-junior": 22,
+  "raid-indian-senior": 28,
+  "raid-jayden": 35,
+  "raid-boss-hayes": 150,
+  // ── Raid 2 — Cronin ──
+  "raid-ap-freshman": 20,
+  "raid-ap-sophomore": 25,
+  "raid-ap-junior": 35,
+  "raid-ap-senior": 40,
+  "raid-baseball-jock": 45,
+  "raid-teachers-pet": 45,
+  "raid-mob-matteo": 60,
+  "raid-boss-cronin": 250,
+  // ── Raid 3 — Bryant ──
+  "raid-yn-freshman": 20,
+  "raid-yn-sophomore": 25,
+  "raid-yn-junior": 35,
+  "raid-yn-senior": 40,
+  "raid-yn-leader": 55,
+  "raid-mob-devon": 70,
+  "raid-mob-bryce": 80,
+  "raid-boss-bryant": 200,
+  "raid-boss-ck3-barrett": 500,
+  // ── Tower bosses (tower regular mobs get 3× their base XP in the engine) ──
+  "tower-boss-sterlin": 200,
+  "tower-boss-corrupted-freshman": 600,
+  "tower-boss-marcello": 2000,
+  "tower-boss-lunch-lady": 6000,
+  "tower-boss-creator": 15000,
+};
+
 export const GOLD_REWARDS: Record<string, number> = {
   // ── Zone mobs ──
   "seventh-grader": 2,

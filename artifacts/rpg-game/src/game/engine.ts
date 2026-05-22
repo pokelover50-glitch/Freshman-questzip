@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import type { GameState, ChoiceOutcome, CharacterClassDef, GearItemDef, GearItemInstance } from "./types";
-import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS, GOLD_REWARDS } from "./encounters";
+import { ZONES, RAID_ENCOUNTERS, ACHIEVEMENT_MOB_IDS, GOLD_REWARDS, XP_REWARDS, xpForLevel } from "./encounters";
 import { rollMobDrops, rollBossDrops, rollRaidBossDrops, rollTowerBossDrops, rollDoomscrollerChest, FOOD_ITEMS, CHEST_ITEMS, CHEST_WEAPON_ITEMS, rollChestDrop, ARMOR_ITEMS } from "./gear";
 
 import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, getGlobalDoomscrollerUnlocked, setGlobalDoomscrollerUnlocked, type SaveData, type SaveSlot } from "./saveLoad";
@@ -65,7 +65,7 @@ const ACHIEVEMENT_REWARDS: Record<string, () => GearItemInstance> = {
 };
 
 function getInitialState(
-  preserve?: Pick<GameState, "barrettDefeated" | "crownTaken" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked" | "towerCrushed" | "gold">
+  preserve?: Pick<GameState, "barrettDefeated" | "crownTaken" | "completedRaids" | "mobsDefeated" | "achievements" | "unclaimedAchievements" | "doomscrollerUnlocked" | "towerCrushed" | "gold" | "level" | "xp">
 ): GameState {
   return {
     phase: "title",
@@ -96,6 +96,9 @@ function getInitialState(
     doomscrollerUnlocked: preserve?.doomscrollerUnlocked ?? getGlobalDoomscrollerUnlocked(),
     towerCrushed: preserve?.towerCrushed ?? false,
     gold: preserve?.gold ?? 0,
+    level: preserve?.level ?? 1,
+    xp: preserve?.xp ?? 0,
+    lastXpEarned: 0,
   };
 }
 
@@ -192,6 +195,9 @@ export function useGameEngine() {
       crownTaken: s.crownTaken ?? false,
       towerCrushed: s.towerCrushed ?? false,
       gold: s.gold ?? 0,
+      level: s.level ?? 1,
+      xp: s.xp ?? 0,
+      lastXpEarned: s.lastXpEarned ?? 0,
     }));
   }, []);
 
@@ -233,6 +239,9 @@ export function useGameEngine() {
       crownTaken: saveData.state.crownTaken ?? false,
       towerCrushed: saveData.state.towerCrushed ?? false,
       gold: saveData.state.gold ?? 0,
+      level: saveData.state.level ?? 1,
+      xp: saveData.state.xp ?? 0,
+      lastXpEarned: 0,
     };
     if (getGlobalDoomscrollerUnlocked() && !loadedState.achievements.includes("matteo-phone") && !loadedState.unclaimedAchievements.includes("matteo-phone")) {
       loadedState = { ...loadedState, achievements: [...loadedState.achievements, "matteo-phone"] };
@@ -299,6 +308,8 @@ export function useGameEngine() {
       doomscrollerUnlocked: state.doomscrollerUnlocked,
       towerCrushed: state.towerCrushed,
       gold: state.gold,
+      level: state.level,
+      xp: state.xp,
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, activeSlot]);
@@ -605,6 +616,21 @@ export function useGameEngine() {
         }
         const newGold = s.gold + goldEarned;
 
+        // ── XP reward ────────────────────────────────────────────────────────
+        let xpEarned = 0;
+        if (rawId.startsWith("tower-") && !currentEncounter.isBoss) {
+          const baseId = rawId.slice(6);
+          xpEarned = (XP_REWARDS[baseId] ?? 0) * 3;
+        } else {
+          xpEarned = XP_REWARDS[rawId] ?? 0;
+        }
+        let newLevel = s.level;
+        let newXp = s.xp + xpEarned;
+        while (newXp >= xpForLevel(newLevel)) {
+          newXp -= xpForLevel(newLevel);
+          newLevel++;
+        }
+
         // ── RAID path ───────────────────────────────────────────────────────
         if (isRaid && raidEncounters) {
           const isLastInRaid = s.encounterIndex >= raidEncounters.length - 1;
@@ -625,6 +651,9 @@ export function useGameEngine() {
               crownTaken: isCK3Barrett ? true : s.crownTaken,
               towerCrushed: isTower ? true : s.towerCrushed,
               gold: newGold,
+              level: newLevel,
+              xp: newXp,
+              lastXpEarned: xpEarned,
             };
           }
 
@@ -645,6 +674,9 @@ export function useGameEngine() {
             mobsDefeated: newMobsDefeated,
             unclaimedAchievements: newUnclaimedAchievements,
             gold: newGold,
+            level: newLevel,
+            xp: newXp,
+            lastXpEarned: xpEarned,
           };
         }
 
@@ -670,6 +702,9 @@ export function useGameEngine() {
             mobsDefeated: newMobsDefeated,
             unclaimedAchievements: finalUnclaimedAchievements,
             gold: newGold,
+            level: newLevel,
+            xp: newXp,
+            lastXpEarned: xpEarned,
           };
         }
 
@@ -692,6 +727,9 @@ export function useGameEngine() {
             mobsDefeated: newMobsDefeated,
             unclaimedAchievements: newUnclaimedAchievements,
             gold: newGold,
+            level: newLevel,
+            xp: newXp,
+            lastXpEarned: xpEarned,
           };
         }
 
@@ -711,6 +749,9 @@ export function useGameEngine() {
           mobsDefeated: newMobsDefeated,
           unclaimedAchievements: newUnclaimedAchievements,
           gold: newGold,
+          level: newLevel,
+          xp: newXp,
+          lastXpEarned: xpEarned,
         };
       }
 

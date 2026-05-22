@@ -120,4 +120,7 @@ export interface GameState {
   doomscrollerUnlocked: boolean;
   towerCrushed: boolean;
   gold: number;
+  level: number;
+  xp: number;
+  lastXpEarned: number;
 }
