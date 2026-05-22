@@ -35,7 +35,7 @@ const ACHIEVEMENTS = [
   {
     id: "free-hayes",
     title: "Free Mr. Hayes",
-    description: "Defeat Captured Mr. Hayes in the Raid and free him from his captors.",
+    description: "Defeat Captured Mr. Hayes in Raid 1 and free him from his captors.",
     goal: 1,
     reward: "🔮 Silver Chest",
     secret: false,
@@ -1885,7 +1885,7 @@ function GameContent() {
                 size="lg"
                 variant="outline"
                 className="text-lg px-12 py-6 font-serif border-destructive/50 hover:bg-destructive hover:text-destructive-foreground text-destructive transition-colors"
-                onClick={game.goToTitle}
+                onClick={state.activeRaidId === "tower" ? game.goToMainMenu : game.goToRaidSelect}
                 data-testid="button-try-again"
               >
                 {state.activeRaidId === "tower" ? "Leave Tower" : "Try Again"}
