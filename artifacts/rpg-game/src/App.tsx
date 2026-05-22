@@ -619,14 +619,30 @@ function InventoryPanel({
                 Grease <span className="normal-case text-muted-foreground/40">(apply to equipped weapon)</span>
               </p>
               <div className="grid grid-cols-1 gap-2">
-                {greases.map((item) => (
+                {Object.values(
+                  greases.reduce<Record<string, { item: typeof greases[0]; count: number }>>((acc, item) => {
+                    if (acc[item.def.id]) acc[item.def.id].count++;
+                    else acc[item.def.id] = { item, count: 1 };
+                    return acc;
+                  }, {})
+                ).map(({ item, count }) => (
                   <div
-                    key={item.instanceId}
+                    key={item.def.id}
                     className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background/40 hover:border-orange-500/40 transition-colors"
                   >
-                    <span className="text-3xl shrink-0">{item.def.emoji}</span>
+                    <div className="relative shrink-0">
+                      <span className="text-3xl">{item.def.emoji}</span>
+                      {count > 1 && (
+                        <span className="absolute -bottom-1 -right-1 bg-orange-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                          {count}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-serif font-bold text-sm" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>{item.def.name}</p>
+                      <p className="font-serif font-bold text-sm" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>
+                        {item.def.name}
+                        {count > 1 && <span className="ml-1.5 text-[11px] text-orange-400/70 font-sans">×{count}</span>}
+                      </p>
                       <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
                     </div>
                     <button
@@ -647,14 +663,30 @@ function InventoryPanel({
                 Items
               </p>
               <div className="grid grid-cols-1 gap-2">
-                {usables.map((item) => (
+                {Object.values(
+                  usables.reduce<Record<string, { item: typeof usables[0]; count: number }>>((acc, item) => {
+                    if (acc[item.def.id]) acc[item.def.id].count++;
+                    else acc[item.def.id] = { item, count: 1 };
+                    return acc;
+                  }, {})
+                ).map(({ item, count }) => (
                   <div
-                    key={item.instanceId}
+                    key={item.def.id}
                     className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background/40 hover:border-primary/40 transition-colors"
                   >
-                    <span className="text-3xl shrink-0">{item.def.emoji}</span>
+                    <div className="relative shrink-0">
+                      <span className="text-3xl">{item.def.emoji}</span>
+                      {count > 1 && (
+                        <span className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                          {count}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-serif font-bold text-sm text-foreground">{item.def.name}</p>
+                      <p className="font-serif font-bold text-sm text-foreground">
+                        {item.def.name}
+                        {count > 1 && <span className="ml-1.5 text-[11px] text-primary/60 font-sans">×{count}</span>}
+                      </p>
                       <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
                     </div>
                     <button
