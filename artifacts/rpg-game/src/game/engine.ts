@@ -441,21 +441,6 @@ export function useGameEngine() {
       const zoneMultiplier = s.activeRaidId ? 1 : Math.pow(1.1, s.zoneIndex);
       const scaledEnemyDamage = Math.round(choice.enemyDamage * zoneMultiplier);
 
-      // ── Level-based difficulty scaling for player damage received ──────────
-      // Levels 1-40: easy (0.4-0.65x), 40-50: ramps up (0.65-1.0x),
-      // 50-70: difficult (1.0-2.0x), 70+: very hard (2.0x)
-      const lvl = s.level;
-      let levelDiffMult: number;
-      if (lvl <= 40) {
-        levelDiffMult = 0.4 + 0.25 * ((lvl - 1) / 39);
-      } else if (lvl <= 50) {
-        levelDiffMult = 0.65 + 0.35 * ((lvl - 40) / 10);
-      } else if (lvl <= 70) {
-        levelDiffMult = 1.0 + 1.0 * ((lvl - 50) / 20);
-      } else {
-        levelDiffMult = 2.0;
-      }
-
       const { enemyDamage, playerDamage: rawPlayerDamage, healAmount, abilityMessage } =
         applyClassAbility(
           s.selectedClass,
@@ -468,7 +453,7 @@ export function useGameEngine() {
 
       // ── Lightning grease: stun — negate all incoming player damage ─────────
       const lightningActive = s.activeGreaseId === "lightning-grease" && s.greaseChoicesLeft > 0;
-      let playerDamage = lightningActive ? 0 : Math.round(rawPlayerDamage * levelDiffMult);
+      let playerDamage = lightningActive ? 0 : rawPlayerDamage;
 
       // ── Add equipped weapon bonus — not multiplied by class abilities ───────
       const equippedWeapon = CHEST_WEAPON_ITEMS.find((w) => w.id === s.equippedItemId);
@@ -703,12 +688,27 @@ export function useGameEngine() {
         const newGold = s.gold + goldEarned;
 
         // ── XP reward ────────────────────────────────────────────────────────
+        // Level-based difficulty scaling for XP earned:
+        // Levels 1-40: easy (0.4-0.65x), 40-50: ramps up (0.65-1.0x),
+        // 50-70: difficult (1.0-2.0x), 70+: very hard (2.0x)
+        const lvl = s.level;
+        let levelDiffMult: number;
+        if (lvl <= 40) {
+          levelDiffMult = 0.4 + 0.25 * ((lvl - 1) / 39);
+        } else if (lvl <= 50) {
+          levelDiffMult = 0.65 + 0.35 * ((lvl - 40) / 10);
+        } else if (lvl <= 70) {
+          levelDiffMult = 1.0 + 1.0 * ((lvl - 50) / 20);
+        } else {
+          levelDiffMult = 2.0;
+        }
+
         let xpEarned = 0;
         if (rawId.startsWith("tower-") && !currentEncounter.isBoss) {
           const baseId = rawId.slice(6);
-          xpEarned = (XP_REWARDS[baseId] ?? 0) * 3;
+          xpEarned = Math.round((XP_REWARDS[baseId] ?? 0) * 3 * levelDiffMult);
         } else {
-          xpEarned = XP_REWARDS[rawId] ?? 0;
+          xpEarned = Math.round((XP_REWARDS[rawId] ?? 0) * levelDiffMult);
         }
         let newLevel = s.level;
         let newXp = s.xp + xpEarned;
