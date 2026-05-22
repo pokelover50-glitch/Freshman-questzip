@@ -8,10 +8,13 @@ import { saveGameToSlot, loadSaveFromSlot, deleteSlotSave, migrateLegacySave, ge
 // ── Upgrade cost helpers ─────────────────────────────────────────────────────
 export function getUpgradeBaseCost(rarityColor: string | undefined): number {
   switch (rarityColor) {
-    case "#4ade80": return 250;   // uncommon
-    case "#60a5fa": return 500;   // rare
-    case "#c084fc": return 1000;  // epic
-    case "#fb923c": return 2500;  // legendary
+    case "#4ade80": return 250;   // uncommon (weapons)
+    case "#60a5fa": return 500;   // rare (weapons)
+    case "#c084fc": return 1000;  // epic (weapons)
+    case "#fb923c": return 2500;  // legendary (weapons + Dom's Armor)
+    case "#cd7f32": return 100;   // bronze armor
+    case "#9ca3af": return 250;   // silver armor
+    case "#fbbf24": return 1000;  // gold armor
     default: return 50;           // common
   }
 }
