@@ -535,6 +535,9 @@ function InventoryPanel({
                           style={!isEquipped && item.def.rarityColor ? { color: item.def.rarityColor } : undefined}
                         >
                           {item.def.name}
+                          {(item.upgradeLevel ?? 0) > 0 && (
+                            <span className="ml-1.5 text-[10px] font-bold text-violet-400 font-sans">+{item.upgradeLevel}</span>
+                          )}
                           {isEquipped && <span className="ml-2 text-[10px] text-yellow-400/80 uppercase tracking-wide font-sans">Equipped</span>}
                         </p>
                         <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
@@ -1495,7 +1498,7 @@ function GameContent() {
                         return eq ? (
                           <div className="flex items-center gap-1.5">
                             <span className="text-base">{eq.def.emoji}</span>
-                            <span className="text-xs font-serif font-bold" style={eq.def.rarityColor ? { color: eq.def.rarityColor } : { color: "rgba(250,204,21,0.9)" }}>{eq.def.name}</span>
+                            <span className="text-xs font-serif font-bold" style={eq.def.rarityColor ? { color: eq.def.rarityColor } : { color: "rgba(250,204,21,0.9)" }}>{eq.def.name}{(eq.upgradeLevel ?? 0) > 0 && <span className="ml-1 text-violet-400">+{eq.upgradeLevel}</span>}</span>
                             <span className="text-[10px] text-muted-foreground/60 font-serif">equipped</span>
                           </div>
                         ) : null;
