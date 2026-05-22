@@ -395,7 +395,6 @@ export function useGameEngine() {
         enemyHp: firstEncounter.enemyMaxHp,
         lastOutcome: null,
         showOutcome: false,
-        inventory: [],
         pendingDrops: [],
         defeatedBosses: [],
         abilityMessage: null,
