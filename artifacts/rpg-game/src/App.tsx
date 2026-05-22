@@ -421,11 +421,23 @@ function InventoryPanel({
   canUseItems: boolean;
   onClose: () => void;
 }) {
+  const [activeTab, setActiveTab] = useState<"all" | "weapons" | "armor" | "items" | "chests">("all");
   const chests = inventory.filter((i) => i.def.isChest);
   const weapons = inventory.filter((i) => i.def.isWeapon);
   const armors = inventory.filter((i) => i.def.isArmor);
   const greases = inventory.filter((i) => i.def.isGrease);
   const usables = inventory.filter((i) => !i.def.isChest && !i.def.isWeapon && !i.def.isArmor && !i.def.isGrease);
+  const itemsCount = greases.length + usables.length;
+
+  const tabs = [
+    { id: "all" as const, label: "All", count: inventory.length },
+    { id: "weapons" as const, label: "⚔️ Weapons", count: weapons.length },
+    { id: "armor" as const, label: "🛡️ Armor", count: armors.length },
+    { id: "items" as const, label: "🧪 Items", count: itemsCount },
+    { id: "chests" as const, label: "📦 Chests", count: chests.length },
+  ].filter((t) => t.id === "all" || t.count > 0);
+
+  const show = (tab: typeof activeTab) => activeTab === "all" || activeTab === tab;
 
   return (
     <motion.div
@@ -459,6 +471,29 @@ function InventoryPanel({
           </button>
         </div>
 
+        {inventory.length > 0 && tabs.length > 2 && (
+          <div className="flex gap-1.5 px-4 py-2.5 border-b border-border bg-card/50 overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-serif font-bold transition-colors ${
+                  activeTab === tab.id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background/40 text-muted-foreground hover:bg-primary/10 hover:text-primary border border-border/50"
+                }`}
+              >
+                {tab.label}
+                {tab.id !== "all" && (
+                  <span className={`rounded-full text-[9px] font-bold w-4 h-4 flex items-center justify-center ${
+                    activeTab === tab.id ? "bg-white/20" : "bg-border/50"
+                  }`}>{tab.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
           {inventory.length === 0 && (
             <p className="text-center text-muted-foreground font-serif italic text-sm py-8">
@@ -466,7 +501,7 @@ function InventoryPanel({
             </p>
           )}
 
-          {armors.length > 0 && (
+          {show("armor") && armors.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
                 Armor <span className="normal-case text-muted-foreground/40">(equip one at a time)</span>
@@ -522,7 +557,7 @@ function InventoryPanel({
             </div>
           )}
 
-          {weapons.length > 0 && (
+          {show("weapons") && weapons.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
                 Weapons <span className="normal-case text-muted-foreground/40">(equip one at a time)</span>
@@ -578,7 +613,7 @@ function InventoryPanel({
             </div>
           )}
 
-          {greases.length > 0 && (
+          {show("items") && greases.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
                 Grease <span className="normal-case text-muted-foreground/40">(apply to equipped weapon)</span>
@@ -606,7 +641,7 @@ function InventoryPanel({
             </div>
           )}
 
-          {usables.length > 0 && (
+          {show("items") && usables.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
                 Items
@@ -635,7 +670,7 @@ function InventoryPanel({
             </div>
           )}
 
-          {chests.length > 0 && (
+          {show("chests") && chests.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs font-serif font-bold uppercase tracking-widest text-muted-foreground/60">
                 Chests
