@@ -541,6 +541,14 @@ function InventoryPanel({
                           {isEquipped && <span className="ml-2 text-[10px] text-yellow-400/80 uppercase tracking-wide font-sans">Equipped</span>}
                         </p>
                         <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
+                        {item.def.damage != null && (
+                          <p className="text-[11px] font-serif text-amber-400/80 mt-0.5">
+                            DMG {Math.floor(item.def.damage * Math.pow(1.2, item.upgradeLevel ?? 0))}
+                            {(item.upgradeLevel ?? 0) > 0 && (
+                              <span className="text-muted-foreground/50 ml-1">(base {item.def.damage})</span>
+                            )}
+                          </p>
+                        )}
                       </div>
                       <button
                         onClick={() => isEquipped ? onUnequip() : onEquip(item.def.id)}
@@ -2168,6 +2176,16 @@ function GameContent() {
                         ))}
                         <span className="text-[10px] font-serif text-muted-foreground ml-1">+{level}/5</span>
                       </div>
+                      {item.def.damage != null && (
+                        <p className="text-[11px] font-serif text-amber-400/80 mt-0.5">
+                          DMG {Math.floor(item.def.damage * Math.pow(1.2, level))}
+                          {!maxed && (
+                            <span className="text-emerald-400/80 ml-1">
+                              → {Math.floor(item.def.damage * Math.pow(1.2, level + 1))} next
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <Button
