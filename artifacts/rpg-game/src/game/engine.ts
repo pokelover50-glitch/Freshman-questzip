@@ -703,7 +703,9 @@ export function useGameEngine() {
           if (!currentEncounter.isBoss) {
             if (s.activeRaidId === "tower") {
               const currentFloor = Math.floor(s.encounterIndex / 10);
-              if (!s.micahVisitedFloors.includes(currentFloor) && Math.random() < 0.35) {
+              const positionInFloor = s.encounterIndex % 10;
+              // Guaranteed mid-floor visit: always appears after the 5th mob (position 4)
+              if (!s.micahVisitedFloors.includes(currentFloor) && positionInFloor === 4) {
                 showVendor = true;
                 newMicahVisitedFloors = [...s.micahVisitedFloors, currentFloor];
               }
