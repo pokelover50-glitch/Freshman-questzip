@@ -23,6 +23,15 @@ export function getUpgradeCost(rarityColor: string | undefined, currentUpgradeLe
   return Math.floor(getUpgradeBaseCost(rarityColor) * Math.pow(2.25, currentUpgradeLevel));
 }
 
+export function getSellValue(rarityColor: string | undefined, upgradeLevel: number): number {
+  const base = Math.floor(getUpgradeBaseCost(rarityColor) * 0.5);
+  let upgradeGold = 0;
+  for (let i = 0; i < (upgradeLevel ?? 0); i++) {
+    upgradeGold += Math.floor(getUpgradeCost(rarityColor, i) * 0.5);
+  }
+  return base + upgradeGold;
+}
+
 export const SHOP_ITEMS = [
   {
     id: "sandwich",
@@ -1100,6 +1109,42 @@ export function useGameEngine() {
     });
   }, []);
 
+  const sellItem = useCallback((instanceId: string) => {
+    setState((s) => {
+      const idx = s.inventory.findIndex((i) => i.instanceId === instanceId);
+      if (idx === -1) return s;
+      const item = s.inventory[idx];
+      const sellValue = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0);
+      const newInventory = s.inventory.filter((_, i) => i !== idx);
+
+      let newEquippedItemId = s.equippedItemId;
+      let newEquippedArmorId = s.equippedArmorId;
+      let newMaxHp = s.playerMaxHp;
+      let newHp = s.playerHp;
+
+      if (item.def.isWeapon && s.equippedItemId === item.def.id) {
+        newEquippedItemId = null;
+      }
+      if (item.def.isArmor && s.equippedArmorId === item.def.id && item.def.hpBonus) {
+        const currentHpBonus = Math.floor(item.def.hpBonus * Math.pow(1.1, item.upgradeLevel ?? 0));
+        newMaxHp = s.playerMaxHp - currentHpBonus;
+        newHp = Math.min(s.playerHp, newMaxHp);
+        newEquippedArmorId = null;
+      }
+
+      return {
+        ...s,
+        inventory: newInventory,
+        gold: s.gold + sellValue,
+        equippedItemId: newEquippedItemId,
+        equippedArmorId: newEquippedArmorId,
+        playerMaxHp: newMaxHp,
+        playerHp: newHp,
+        itemActionMessage: `Sold ${item.def.name} for 🪙 ${sellValue.toLocaleString()}`,
+      };
+    });
+  }, []);
+
   const upgradeItem = useCallback((instanceId: string) => {
     setState((s) => {
       const idx = s.inventory.findIndex((i) => i.instanceId === instanceId);
@@ -1163,6 +1208,7 @@ export function useGameEngine() {
     buyFireGrease,
     buyLightningGrease,
     applyGrease,
+    sellItem,
     upgradeItem,
     lastSavedAt,
     ZONES,

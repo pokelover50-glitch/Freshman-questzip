@@ -1,4 +1,4 @@
-import { useGameEngine, SHOP_ITEMS, getUpgradeCost } from "./game/engine";
+import { useGameEngine, SHOP_ITEMS, getUpgradeCost, getSellValue } from "./game/engine";
 import { CHARACTER_CLASSES } from "./game/characters";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -2136,6 +2136,40 @@ function GameContent() {
                 })}
               </div>
 
+              {state.inventory.length > 0 && (
+                <div className="w-full max-w-sm space-y-3">
+                  <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase text-left">Sell Items</h3>
+                  <div className="flex flex-col gap-2">
+                    {state.inventory.map((item) => {
+                      const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0);
+                      const isEquipped = item.def.id === state.equippedItemId || item.def.id === state.equippedArmorId;
+                      return (
+                        <div key={item.instanceId} className="rounded-xl border border-border/50 bg-background/20 p-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-left min-w-0">
+                            <span className="text-xl shrink-0">{item.def.emoji}</span>
+                            <div className="min-w-0">
+                              <p className="font-serif text-sm font-bold truncate" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>
+                                {item.def.name}
+                                {(item.upgradeLevel ?? 0) > 0 && <span className="ml-1 text-violet-400">+{item.upgradeLevel}</span>}
+                                {isEquipped && <span className="ml-1.5 text-[10px] text-yellow-400/70 uppercase">Equipped</span>}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="font-serif shrink-0 bg-rose-700 hover:bg-rose-600 text-white text-xs"
+                            onClick={() => game.sellItem(item.instanceId)}
+                          >
+                            🪙 {sellVal.toLocaleString()}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/40 font-serif text-left">50% of base value + 50% of upgrades invested</p>
+                </div>
+              )}
+
               <button
                 className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors"
                 onClick={game.goToMainMenu}
@@ -2377,6 +2411,41 @@ function GameContent() {
                   })()}
                   <p className="text-[10px] text-muted-foreground/50 font-serif text-left">Grease goes to your backpack — equip a weapon then apply it from the backpack.</p>
                 </div>
+
+                {/* Sell Items */}
+                {state.inventory.length > 0 && (
+                  <div className="w-full max-w-sm space-y-3">
+                    <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase text-left">Sell Items</h3>
+                    <div className="flex flex-col gap-2">
+                      {state.inventory.map((item) => {
+                        const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0);
+                        const isEquipped = item.def.id === state.equippedItemId || item.def.id === state.equippedArmorId;
+                        return (
+                          <div key={item.instanceId} className="rounded-xl border border-border/50 bg-background/20 p-3 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-left min-w-0">
+                              <span className="text-xl shrink-0">{item.def.emoji}</span>
+                              <div className="min-w-0">
+                                <p className="font-serif text-sm font-bold truncate" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>
+                                  {item.def.name}
+                                  {(item.upgradeLevel ?? 0) > 0 && <span className="ml-1 text-violet-400">+{item.upgradeLevel}</span>}
+                                  {isEquipped && <span className="ml-1.5 text-[10px] text-yellow-400/70 uppercase">Equipped</span>}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="font-serif shrink-0 bg-rose-700 hover:bg-rose-600 text-white text-xs"
+                              onClick={() => game.sellItem(item.instanceId)}
+                            >
+                              🪙 {sellVal.toLocaleString()}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground/40 font-serif text-left">50% of base value + 50% of upgrades invested</p>
+                  </div>
+                )}
 
                 {/* Leave */}
                 <Button
