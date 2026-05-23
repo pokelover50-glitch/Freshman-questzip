@@ -1139,6 +1139,11 @@ function GameContent() {
                                 Lv. {save.state.level}
                               </span>
                             )}
+                            {save && (save.state.ngPlus ?? 0) > 0 && (
+                              <span className="text-[10px] font-bold font-serif px-1.5 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-400 border border-fuchsia-500/30 uppercase tracking-wide">
+                                NG+{save.state.ngPlus}
+                              </span>
+                            )}
                           </div>
                           {save && (
                             <span className="text-xs text-primary/70 font-serif group-hover:text-primary transition-colors">
