@@ -1097,25 +1097,25 @@ function GameContent() {
                       className="flex items-stretch gap-2"
                     >
                       <motion.button
-                        animate={save?.state.crownTaken ? {
-                          boxShadow: [
-                            "0 0 8px -2px rgba(234,179,8,0.4), inset 0 0 0 1px rgba(234,179,8,0.35)",
-                            "0 0 22px -2px rgba(234,179,8,0.75), inset 0 0 0 1px rgba(234,179,8,0.7)",
-                            "0 0 8px -2px rgba(234,179,8,0.4), inset 0 0 0 1px rgba(234,179,8,0.35)",
-                          ],
-                        } : save?.state.towerCrushed ? {
+                        animate={save?.state.towerCrushed ? {
                           boxShadow: [
                             "0 0 8px -2px rgba(139,92,246,0.4), inset 0 0 0 1px rgba(139,92,246,0.35)",
                             "0 0 22px -2px rgba(139,92,246,0.75), inset 0 0 0 1px rgba(139,92,246,0.7)",
                             "0 0 8px -2px rgba(139,92,246,0.4), inset 0 0 0 1px rgba(139,92,246,0.35)",
                           ],
+                        } : save?.state.crownTaken ? {
+                          boxShadow: [
+                            "0 0 8px -2px rgba(234,179,8,0.4), inset 0 0 0 1px rgba(234,179,8,0.35)",
+                            "0 0 22px -2px rgba(234,179,8,0.75), inset 0 0 0 1px rgba(234,179,8,0.7)",
+                            "0 0 8px -2px rgba(234,179,8,0.4), inset 0 0 0 1px rgba(234,179,8,0.35)",
+                          ],
                         } : {}}
                         transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                         className={`flex-1 text-left rounded-xl border px-5 py-4 transition-all font-serif group ${
-                          save?.state.crownTaken
-                            ? "border-yellow-400/50 bg-yellow-400/5 hover:bg-yellow-400/10 hover:border-yellow-400/80 cursor-pointer"
-                            : save?.state.towerCrushed
+                          save?.state.towerCrushed
                             ? "border-purple-500/50 bg-purple-500/5 hover:bg-purple-500/10 hover:border-purple-400/80 cursor-pointer"
+                            : save?.state.crownTaken
+                            ? "border-yellow-400/50 bg-yellow-400/5 hover:bg-yellow-400/10 hover:border-yellow-400/80 cursor-pointer"
                             : save
                             ? "border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/70 cursor-pointer"
                             : "border-border/40 bg-card/40 hover:bg-card hover:border-border cursor-pointer"
