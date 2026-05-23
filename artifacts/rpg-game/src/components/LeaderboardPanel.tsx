@@ -176,9 +176,6 @@ export function LeaderboardPanel({
                       {entry.playerName}
                     </span>
                     {isMe && <span className="text-primary/60 text-xs font-serif shrink-0">(you)</span>}
-                    {entry.ngPlus > 0 && (
-                      <span className="text-xs text-fuchsia-400 font-serif shrink-0">NG+{entry.ngPlus}</span>
-                    )}
                   </div>
                   {entry.characterClass && (
                     <p className="text-[10px] text-muted-foreground/50 font-serif truncate">
@@ -188,6 +185,9 @@ export function LeaderboardPanel({
                 </div>
                 <div className="text-right shrink-0">
                   <span className="text-primary font-bold font-serif text-sm">Lvl {entry.level}</span>
+                  {entry.ngPlus > 0 && (
+                    <p className="text-xs text-fuchsia-400 font-serif">NG+{entry.ngPlus}</p>
+                  )}
                 </div>
               </motion.div>
             );
