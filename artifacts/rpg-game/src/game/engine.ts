@@ -30,7 +30,7 @@ export function getUpgradeCost(rarityColor: string | undefined, currentUpgradeLe
 
 const CHEST_SELL_PRICES: Record<string, number> = {
   "wooden-chest": 50,
-  "bronze-chest": 250,
+  "bronze-chest": 100,
   "silver-chest": 500,
   "gold-chest": 1750,
   "obsidian-chest": 12250,
@@ -703,7 +703,8 @@ export function useGameEngine() {
       const raidEncounters = isRaid ? RAID_ENCOUNTERS[s.activeRaidId!] : null;
 
       if (playerDied) {
-        return { ...s, phase: "game-over", showOutcome: false, pendingDrops: [], defeatedByName: currentEncounter.enemyName };
+        const ngLabel = (s.ngPlus ?? 0) > 0 ? `NG+${s.ngPlus} ` : "";
+        return { ...s, phase: "game-over", showOutcome: false, pendingDrops: [], defeatedByName: `${ngLabel}${currentEncounter.enemyName}` };
       }
 
       if (enemyDied) {
@@ -754,8 +755,8 @@ export function useGameEngine() {
           if (!alreadyEarned) newUnclaimedAchievements = [...newUnclaimedAchievements, "free-cronin"];
         }
 
-        // free-bryant achievement
-        if (currentEncounter.id === "raid-boss-bryant") {
+        // free-bryant achievement — unlocked only when CK3 Barrett is fully defeated
+        if (currentEncounter.id === "raid-boss-ck3-barrett") {
           const alreadyEarned = s.achievements.includes("free-bryant") || s.unclaimedAchievements.includes("free-bryant");
           if (!alreadyEarned) newUnclaimedAchievements = [...newUnclaimedAchievements, "free-bryant"];
         }
@@ -823,6 +824,24 @@ export function useGameEngine() {
         // ── RAID path ───────────────────────────────────────────────────────
         if (isRaid && raidEncounters) {
           const isLastInRaid = s.encounterIndex >= raidEncounters.length - 1;
+
+          // Tower floor complete: offer exit after floors 1-4 (indices 9,19,29,39)
+          if (s.activeRaidId === "tower" && currentEncounter.isBoss && !isLastInRaid && s.encounterIndex % 10 === 9) {
+            return {
+              ...s,
+              phase: "tower-floor-complete",
+              showOutcome: false,
+              inventory: newInventory,
+              pendingDrops: drops,
+              defeatedBosses: newDefeatedBosses,
+              mobsDefeated: newMobsDefeated,
+              unclaimedAchievements: newUnclaimedAchievements,
+              gold: newGold,
+              level: newLevel,
+              xp: newXp,
+              lastXpEarned: xpEarned,
+            };
+          }
 
           if (isLastInRaid) {
             const isCK3Barrett = s.activeRaidId === "bryant";
@@ -1110,6 +1129,29 @@ export function useGameEngine() {
     setState((s) => ({ ...s, phase: "shop" }));
   }, []);
 
+  const continueTowerFloor = useCallback(() => {
+    setState((s) => {
+      const raidEncounters = RAID_ENCOUNTERS["tower"];
+      if (!raidEncounters) return s;
+      const newEncounterIndex = s.encounterIndex + 1;
+      const newEncounter = raidEncounters[newEncounterIndex];
+      if (!newEncounter) return s;
+      const ngMult = getNgPlusMultiplier(s.ngPlus ?? 0);
+      return {
+        ...s,
+        phase: "encounter",
+        encounterIndex: newEncounterIndex,
+        roundIndex: 0,
+        enemyHp: Math.round(newEncounter.enemyMaxHp * ngMult),
+        showOutcome: false,
+        lastOutcome: null,
+        pendingDrops: [],
+        abilityMessage: null,
+        micahVisitedFloors: s.micahVisitedFloors,
+      };
+    });
+  }, []);
+
   const enterNewGamePlus = useCallback(() => {
     setState((s) => {
       if (!canEnterNgPlus(s)) return s;
@@ -1132,6 +1174,13 @@ export function useGameEngine() {
           corruptedFreshmanDefeated: false,
         }),
         phase: "main-menu",
+        // Preserve class and inventory across NG+
+        selectedClass: s.selectedClass,
+        inventory: s.inventory,
+        equippedItemId: s.equippedItemId,
+        equippedArmorId: s.equippedArmorId,
+        playerHp: s.selectedClass?.maxHp ?? 100,
+        playerMaxHp: s.selectedClass?.maxHp ?? 100,
       };
       // Persist immediately so the slot reflects the NG+ state right away
       saveGameToSlot(activeSlot, newState);
@@ -1343,5 +1392,6 @@ export function useGameEngine() {
     lastSavedAt,
     ZONES,
     enterNewGamePlus,
+    continueTowerFloor,
   };
 }

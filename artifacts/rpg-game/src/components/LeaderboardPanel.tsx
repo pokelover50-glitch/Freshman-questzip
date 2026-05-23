@@ -20,6 +20,15 @@ const CLASS_EMOJI: Record<string, string> = {
   "doomscroller-freshman": "📱",
 };
 
+const CLASS_NAME: Record<string, string> = {
+  freshie: "Freshie",
+  "bulking-freshman": "Bulking Freshman",
+  "girl-freshman": "Girl Freshman",
+  "barretts-type": "Barrett's Type",
+  "sixty-seven-freshman": "67 Freshman",
+  "doomscroller-freshman": "Doomscroller",
+};
+
 function rankBadge(rank: number) {
   if (rank === 1) return "🥇";
   if (rank === 2) return "🥈";
@@ -70,7 +79,7 @@ export function LeaderboardPanel({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <motion.div
@@ -171,6 +180,11 @@ export function LeaderboardPanel({
                       <span className="text-xs text-fuchsia-400 font-serif shrink-0">NG+{entry.ngPlus}</span>
                     )}
                   </div>
+                  {entry.characterClass && (
+                    <p className="text-[10px] text-muted-foreground/50 font-serif truncate">
+                      {CLASS_NAME[entry.characterClass] ?? entry.characterClass}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right shrink-0">
                   <span className="text-primary font-bold font-serif text-sm">Lvl {entry.level}</span>

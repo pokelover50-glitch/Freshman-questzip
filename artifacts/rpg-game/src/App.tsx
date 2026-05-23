@@ -234,10 +234,12 @@ function ChestSpinner({
   chest,
   onClaim,
   onClose,
+  ownedItemIds = [],
 }: {
   chest: GearItemInstance;
   onClaim: (instanceId: string, wonItem: GearItemDef) => void;
   onClose: () => void;
+  ownedItemIds?: string[];
 }) {
   const pool = CHEST_LOOT_POOLS[chest.def.id] ?? [];
   const wonItemRef = useRef<GearItemDef | null>(null);
@@ -306,8 +308,8 @@ function ChestSpinner({
                     transition={{ duration: 0.12 }}
                     className="absolute inset-0 flex flex-col items-center justify-center gap-1.5"
                   >
-                    <span className="text-6xl">{currentItem?.item.emoji ?? "✨"}</span>
-                    <p className="font-serif text-sm text-muted-foreground" style={currentItem?.item.rarityColor ? { color: currentItem.item.rarityColor } : undefined}>{currentItem?.item.name ?? "…"}</p>
+                    <span className="text-6xl">{(currentItem?.item.id === "wand-67" && !ownedItemIds.includes("wand-67")) ? "❓" : (currentItem?.item.emoji ?? "✨")}</span>
+                    <p className="font-serif text-sm text-muted-foreground" style={(currentItem?.item.id !== "wand-67" || ownedItemIds.includes("wand-67")) && currentItem?.item.rarityColor ? { color: currentItem.item.rarityColor } : undefined}>{(currentItem?.item.id === "wand-67" && !ownedItemIds.includes("wand-67")) ? "???" : (currentItem?.item.name ?? "…")}</p>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -361,6 +363,7 @@ function ChestSpinner({
               const pct = Math.round((entry.weight / totalWeight) * 100);
               const isSpinning = !showResult && i === displayIdx;
               const isWon = showResult && wonItem?.id === entry.item.id;
+              const isHidden = entry.item.id === "wand-67" && !ownedItemIds.includes("wand-67");
               return (
                 <motion.div
                   key={entry.item.id}
@@ -374,13 +377,13 @@ function ChestSpinner({
                       : "border border-transparent"
                   }`}
                 >
-                  <span className="text-base shrink-0">{entry.item.emoji}</span>
+                  <span className="text-base shrink-0">{isHidden ? "❓" : entry.item.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <p
                       className={`text-[11px] font-serif leading-tight truncate ${isWon ? "text-yellow-300 font-bold" : isSpinning ? "text-primary font-semibold" : "font-semibold"}`}
-                      style={!isWon && !isSpinning && entry.item.rarityColor ? { color: entry.item.rarityColor } : undefined}
+                      style={!isHidden && !isWon && !isSpinning && entry.item.rarityColor ? { color: entry.item.rarityColor } : undefined}
                     >
-                      {entry.item.name}
+                      {isHidden ? "???" : entry.item.name}
                     </p>
                     <p className={`text-[10px] font-mono ${isWon ? "text-yellow-400" : isSpinning ? "text-primary/80" : "text-muted-foreground/60"}`}>
                       {pct}%
@@ -517,7 +520,7 @@ function InventoryPanel({
                       className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
                         isEquipped
                           ? "border-blue-400/70 bg-blue-400/10 shadow-[0_0_10px_-4px_rgba(96,165,250,0.5)]"
-                          : "border-border bg-background/40 hover:border-primary/40"
+                          : `border-border bg-background/40 hover:border-primary/40 ${rarityTierClass(item.def.rarityTier)}`
                       }`}
                     >
                       <span className="text-3xl shrink-0">{item.def.emoji}</span>
@@ -573,7 +576,7 @@ function InventoryPanel({
                       className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
                         isEquipped
                           ? "border-yellow-500/70 bg-yellow-500/10 shadow-[0_0_10px_-4px_rgba(234,179,8,0.5)]"
-                          : "border-border bg-background/40 hover:border-primary/40"
+                          : `border-border bg-background/40 hover:border-primary/40 ${rarityTierClass(item.def.rarityTier)}`
                       }`}
                     >
                       <span className="text-3xl shrink-0">{item.def.emoji}</span>
@@ -710,14 +713,30 @@ function InventoryPanel({
                 Chests
               </p>
               <div className="grid grid-cols-1 gap-2">
-                {chests.map((item) => (
+                {Object.values(
+                  chests.reduce<Record<string, { item: typeof chests[0]; count: number }>>((acc, item) => {
+                    if (acc[item.def.id]) acc[item.def.id].count++;
+                    else acc[item.def.id] = { item, count: 1 };
+                    return acc;
+                  }, {})
+                ).map(({ item, count }) => (
                   <div
-                    key={item.instanceId}
+                    key={item.def.id}
                     className="flex items-center gap-3 p-3 rounded-lg border border-primary/20 bg-primary/5"
                   >
-                    <span className="text-3xl shrink-0">{item.def.emoji}</span>
+                    <div className="relative shrink-0">
+                      <span className="text-3xl">{item.def.emoji}</span>
+                      {count > 1 && (
+                        <span className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                          {count}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-serif font-bold text-sm text-primary">{item.def.name}</p>
+                      <p className="font-serif font-bold text-sm text-primary">
+                        {item.def.name}
+                        {count > 1 && <span className="ml-1.5 text-[11px] text-primary/60 font-sans">×{count}</span>}
+                      </p>
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {item.def.id === "wooden-chest" && "Common chest. Spin for a weapon!"}
                         {item.def.id === "bronze-chest" && "Uncommon chest. Better odds for rare weapons!"}
@@ -739,6 +758,13 @@ function InventoryPanel({
       </motion.div>
     </motion.div>
   );
+}
+
+function rarityTierClass(rarityTier?: string): string {
+  if (rarityTier === "mythic") return "rarity-mythic";
+  if (rarityTier === "exotic") return "rarity-exotic";
+  if (rarityTier === "eternal") return "rarity-eternal";
+  return "";
 }
 
 function BackpackButton({
@@ -859,16 +885,16 @@ function GameContent() {
     }).catch(() => {});
   }
 
-  // Auto-submit every 5 minutes when in-game
+  // Auto-submit every 5 minutes (independent of phase changes so it never resets)
   useEffect(() => {
     const interval = setInterval(() => {
       const uname = usernameRef.current;
-      if (!uname || state.phase === "title") return;
+      if (!uname) return;
       submitScore(uname, lastLevelRef.current, lastNgPlusRef.current, lastClassRef.current);
     }, 5 * 60 * 1000);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.phase]);
+  }, []);
 
   // Submit on page unload (sendBeacon for reliability)
   useEffect(() => {
@@ -1406,6 +1432,22 @@ function GameContent() {
               exit="exit"
               className="flex flex-col space-y-8"
             >
+              {/* NG+: class is preserved — show read-only selected class */}
+              {(state.ngPlus ?? 0) > 0 && state.selectedClass ? (
+                <div className="flex flex-col items-center gap-6 py-8">
+                  <h2 className="text-3xl font-serif font-bold text-fuchsia-300">NG+{state.ngPlus} — Class Preserved</h2>
+                  <div className="text-7xl">{state.selectedClass.emoji}</div>
+                  <p className="text-xl font-serif text-foreground font-bold">{state.selectedClass.name}</p>
+                  <p className="text-sm text-muted-foreground font-serif max-w-xs text-center">Your class carries over in New Game Plus. Your inventory and stats are preserved.</p>
+                  <Button size="lg" className="font-serif bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-10 py-5 text-lg" onClick={() => game.startGame()}>
+                    Continue as {state.selectedClass.name} →
+                  </Button>
+                  <button className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors" onClick={game.goToMainMenu}>
+                    ← Back to Menu
+                  </button>
+                </div>
+              ) : (
+              <>
               <div className="text-center space-y-2">
                 <h2 className="text-4xl font-serif font-bold text-primary">
                   Choose Your Class
@@ -1466,6 +1508,8 @@ function GameContent() {
                   );
                 })}
               </div>
+              </>
+              )}
             </motion.div>
           )}
 
@@ -1535,7 +1579,7 @@ function GameContent() {
                         </span>
                         . Someone has taken over. The students are hostile. A captured teacher waits at the end.
                         {state.activeRaidId === "bryant" && (
-                          <> Rumor has it <span className="text-destructive font-semibold">CK3 Barrett</span> is lurking behind the scenes.</>
+                          <> Rumor has it <span className="text-destructive font-semibold">???</span> is lurking behind the scenes.</>
                         )}
                       </p>
                       <p>
@@ -1565,7 +1609,7 @@ function GameContent() {
                             <>
                               <Badge variant="outline" className="text-sm py-1 border-primary/30 bg-primary/5 font-serif">9 mobs</Badge>
                               <Badge variant="outline" className="text-sm py-1 border-destructive/30 bg-destructive/5 font-serif">Boss: Captured Mr. Bryant</Badge>
-                              <Badge variant="outline" className="text-sm py-1 border-red-500/30 bg-red-500/5 text-red-400 font-serif">Secret: CK3 Barrett 👑</Badge>
+                              <Badge variant="outline" className="text-sm py-1 border-red-500/30 bg-red-500/5 text-red-400 font-serif">Secret: ??? 👑</Badge>
                             </>
                           )}
                         </div>
@@ -2165,6 +2209,58 @@ function GameContent() {
             </motion.div>
           )}
 
+          {/* ── TOWER FLOOR COMPLETE ── */}
+          {state.phase === "tower-floor-complete" && (
+            <motion.div
+              key="tower-floor-complete"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="flex flex-col items-center text-center space-y-10 py-12"
+            >
+              <div className="space-y-4">
+                <div className="text-6xl mb-2">🏰</div>
+                <h1 className="text-5xl font-serif font-bold text-purple-300 drop-shadow-[0_0_30px_rgba(168,85,247,0.6)]">
+                  Floor {Math.floor((state.encounterIndex) / 10)} Cleared!
+                </h1>
+                <p className="text-lg font-serif text-muted-foreground max-w-sm mx-auto">
+                  You've cleared this floor of the tower. Regroup your strength before continuing the climb.
+                </p>
+              </div>
+
+              {state.pendingDrops.length > 0 && (
+                <div className="space-y-3 w-full max-w-sm">
+                  <h2 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">Floor Boss Loot</h2>
+                  {state.pendingDrops.map((drop) => (
+                    <div key={drop.instanceId} className="flex items-center gap-3 bg-card/60 border border-border rounded-lg px-4 py-2">
+                      <span className="text-2xl">{drop.def.emoji}</span>
+                      <span className="font-serif text-foreground">{drop.def.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-4 w-full max-w-sm">
+                <Button
+                  size="lg"
+                  className="text-lg px-8 py-6 font-serif bg-purple-600 hover:bg-purple-500 text-white"
+                  onClick={game.continueTowerFloor}
+                >
+                  Continue to Floor {Math.floor((state.encounterIndex) / 10) + 1} →
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="font-serif border-border hover:bg-card/80"
+                  onClick={game.goToMainMenu}
+                >
+                  Exit Tower (Save Progress)
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
           {/* ── RAID COMPLETE ── */}
           {state.phase === "raid-complete" && (
             <motion.div
@@ -2448,7 +2544,7 @@ function GameContent() {
                 item.def.rarityColor === "#c084fc" ? "Epic" :
                 item.def.rarityColor === "#fb923c" ? "Legendary" : "Common";
               return (
-                <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${!maxed && canAfford ? "border-border bg-card/60 hover:border-primary/40" : "border-border/30 bg-background/20 opacity-60"}`}>
+                <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${!maxed && canAfford ? `border-border bg-card/60 hover:border-primary/40 ${rarityTierClass(item.def.rarityTier)}` : "border-border/30 bg-background/20 opacity-60"}`}>
                   <div className="flex items-center gap-3 text-left flex-1 min-w-0">
                     <span className="text-2xl shrink-0">{item.def.emoji}</span>
                     <div className="min-w-0">
@@ -2656,45 +2752,64 @@ function GameContent() {
                   <div className="w-full max-w-sm space-y-3">
                     <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase text-left">Sell Items</h3>
                     <div className="flex flex-col gap-2">
-                      {state.inventory.map((item) => {
-                        const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0);
-                        const isEquipped = item.def.id === state.equippedItemId || item.def.id === state.equippedArmorId;
-                        return (
-                          <div key={item.instanceId} className="rounded-xl border border-border/50 bg-background/20 p-3 flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 text-left min-w-0">
-                              <span className="text-xl shrink-0">{item.def.emoji}</span>
-                              <div className="min-w-0">
-                                <p className="font-serif text-sm font-bold truncate" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>
-                                  {item.def.name}
-                                  {(item.upgradeLevel ?? 0) > 0 && <span className="ml-1 text-violet-400">+{item.upgradeLevel}</span>}
-                                  {isEquipped && <span className="ml-1.5 text-[10px] text-yellow-400/70 uppercase">Equipped</span>}
-                                </p>
+                      {(() => {
+                        // Group stackable items (chests/greases/potions that have no upgrade) by def.id, show others individually
+                        const groups: Array<{ key: string; items: typeof state.inventory }> = [];
+                        const seen = new Set<string>();
+                        for (const item of state.inventory) {
+                          const isStackable = item.def.type === "chest" || item.def.type === "grease" || (item.def.type === "usable" && !item.upgradeLevel);
+                          if (isStackable) {
+                            if (!seen.has(item.def.id)) {
+                              seen.add(item.def.id);
+                              groups.push({ key: item.def.id, items: state.inventory.filter(i => i.def.id === item.def.id) });
+                            }
+                          } else {
+                            groups.push({ key: item.instanceId, items: [item] });
+                          }
+                        }
+                        return groups.map(({ key, items }) => {
+                          const item = items[0];
+                          const count = items.length;
+                          const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0);
+                          const isEquipped = item.def.id === state.equippedItemId || item.def.id === state.equippedArmorId;
+                          return (
+                            <div key={key} className={`rounded-xl border border-border/50 bg-background/20 p-3 flex items-center justify-between gap-3 ${rarityTierClass(item.def.rarityTier)}`}>
+                              <div className="flex items-center gap-2 text-left min-w-0">
+                                <span className="text-xl shrink-0">{item.def.emoji}</span>
+                                <div className="min-w-0">
+                                  <p className="font-serif text-sm font-bold truncate" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>
+                                    {item.def.name}
+                                    {count > 1 && <span className="ml-1.5 text-[11px] text-muted-foreground/60 font-sans">×{count}</span>}
+                                    {(item.upgradeLevel ?? 0) > 0 && <span className="ml-1 text-violet-400">+{item.upgradeLevel}</span>}
+                                    {isEquipped && <span className="ml-1.5 text-[10px] text-yellow-400/70 uppercase">Equipped</span>}
+                                  </p>
+                                </div>
                               </div>
+                              {sellConfirm === key ? (
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className="text-[10px] font-serif text-muted-foreground whitespace-nowrap">Sell{count > 1 ? ` 1 for` : " for"} 🪙{sellVal.toLocaleString()}?</span>
+                                  <button
+                                    className="px-2 py-1 rounded text-[10px] font-bold font-serif border border-border/50 text-muted-foreground hover:bg-card transition-colors"
+                                    onClick={() => setSellConfirm(null)}
+                                  >No</button>
+                                  <button
+                                    className="px-2 py-1 rounded text-[10px] font-bold font-serif bg-rose-700 hover:bg-rose-600 text-white transition-colors"
+                                    onClick={() => { game.sellItem(item.instanceId); setSellConfirm(null); }}
+                                  >Yes</button>
+                                </div>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  className="font-serif shrink-0 bg-rose-700 hover:bg-rose-600 text-white text-xs"
+                                  onClick={() => setSellConfirm(key)}
+                                >
+                                  🪙 {sellVal.toLocaleString()}
+                                </Button>
+                              )}
                             </div>
-                            {sellConfirm === item.instanceId ? (
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10px] font-serif text-muted-foreground whitespace-nowrap">Sell for 🪙{sellVal.toLocaleString()}?</span>
-                                <button
-                                  className="px-2 py-1 rounded text-[10px] font-bold font-serif border border-border/50 text-muted-foreground hover:bg-card transition-colors"
-                                  onClick={() => setSellConfirm(null)}
-                                >No</button>
-                                <button
-                                  className="px-2 py-1 rounded text-[10px] font-bold font-serif bg-rose-700 hover:bg-rose-600 text-white transition-colors"
-                                  onClick={() => { game.sellItem(item.instanceId); setSellConfirm(null); }}
-                                >Yes</button>
-                              </div>
-                            ) : (
-                              <Button
-                                size="sm"
-                                className="font-serif shrink-0 bg-rose-700 hover:bg-rose-600 text-white text-xs"
-                                onClick={() => setSellConfirm(item.instanceId)}
-                              >
-                                🪙 {sellVal.toLocaleString()}
-                              </Button>
-                            )}
-                          </div>
-                        );
-                      })}
+                          );
+                        });
+                      })()}
                     </div>
                     <p className="text-[10px] text-muted-foreground/40 font-serif text-left">50% of base value + 50% of upgrades invested</p>
                   </div>
@@ -2755,6 +2870,7 @@ function GameContent() {
         {spinnerChest && (
           <ChestSpinner
             chest={spinnerChest}
+            ownedItemIds={state.inventory.map(i => i.def.id)}
             onClaim={(instanceId, wonItem) => {
               game.openChest(instanceId, wonItem);
               setSpinnerChest(null);

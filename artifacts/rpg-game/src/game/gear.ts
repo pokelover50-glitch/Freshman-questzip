@@ -106,6 +106,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     isWeapon: true,
     scalesWithZone: false,
     rarityColor: "#e879f9",
+    rarityTier: "mythic",
   },
   {
     id: "cmilk-katana",
@@ -119,6 +120,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     isWeapon: true,
     scalesWithZone: false,
     rarityColor: "#f472b6",
+    rarityTier: "mythic",
   },
   {
     id: "divine-daggers",
@@ -132,6 +134,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     isWeapon: true,
     scalesWithZone: false,
     rarityColor: "#38bdf8",
+    rarityTier: "exotic",
   },
   {
     id: "void-rapier",
@@ -145,6 +148,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     isWeapon: true,
     scalesWithZone: false,
     rarityColor: "#f43f5e",
+    rarityTier: "eternal",
   },
   {
     id: "wand-67",
@@ -158,6 +162,7 @@ export const CHEST_WEAPON_ITEMS: GearItemDef[] = [
     isWeapon: true,
     scalesWithZone: false,
     rarityColor: "#6366f1",
+    rarityTier: "eternal",
   },
 ];
 
@@ -257,6 +262,7 @@ export const ARMOR_ITEMS: GearItemDef[] = [
     isArmor: true,
     hpBonus: 500,
     rarityColor: "#e879f9",
+    rarityTier: "mythic",
   },
   {
     id: "divine-armor",
@@ -270,6 +276,7 @@ export const ARMOR_ITEMS: GearItemDef[] = [
     isArmor: true,
     hpBonus: 1000,
     rarityColor: "#38bdf8",
+    rarityTier: "exotic",
   },
 ];
 

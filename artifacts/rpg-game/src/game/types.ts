@@ -56,6 +56,7 @@ export interface GearItemDef {
   scalesWithZone?: boolean;
   barrettMultiplier?: number;
   rarityColor?: string;
+  rarityTier?: "mythic" | "exotic" | "eternal";
 }
 
 export interface GearItemInstance {
@@ -90,6 +91,7 @@ export type GamePhase =
   | "encounter"
   | "victory"
   | "raid-complete"
+  | "tower-floor-complete"
   | "game-over"
   | "ck3-cutscene"
   | "tower-select"
