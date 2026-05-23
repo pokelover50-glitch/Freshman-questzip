@@ -1388,6 +1388,20 @@ function GameContent() {
                 </motion.div>
               )}
 
+              {/* ── Settings ── */}
+              <div className="w-full max-w-sm rounded-xl border border-border/30 bg-card/40 px-4 py-3 flex items-center justify-between gap-3">
+                <div className="text-left">
+                  <p className="text-sm font-serif text-foreground/80">Skip Vendor (Micah)</p>
+                  <p className="text-[11px] text-muted-foreground/50 font-serif">Disable random vendor interruptions during runs &amp; tower</p>
+                </div>
+                <button
+                  onClick={game.toggleSkipVendor}
+                  className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${state.skipVendor ? "bg-primary" : "bg-muted/40 border border-border/60"}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.skipVendor ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+
               <div className="flex items-center justify-between w-full max-w-sm px-1">
                 <button
                   className="text-sm font-serif text-muted-foreground/40 hover:text-muted-foreground transition-colors"

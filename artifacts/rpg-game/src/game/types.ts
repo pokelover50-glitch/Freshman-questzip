@@ -140,4 +140,5 @@ export interface GameState {
   greaseChoicesLeft: number;
   ngPlus: number;
   corruptedFreshmanDefeated: boolean;
+  skipVendor: boolean;
 }

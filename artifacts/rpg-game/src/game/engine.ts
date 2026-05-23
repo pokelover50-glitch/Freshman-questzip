@@ -211,6 +211,7 @@ function getInitialState(
     greaseChoicesLeft: 0,
     ngPlus: preserve?.ngPlus ?? 0,
     corruptedFreshmanDefeated: preserve?.corruptedFreshmanDefeated ?? false,
+    skipVendor: false,
   };
 }
 
@@ -320,6 +321,7 @@ export function useGameEngine() {
       greaseChoicesLeft: s.greaseChoicesLeft ?? 0,
       ngPlus: s.ngPlus ?? 0,
       corruptedFreshmanDefeated: s.corruptedFreshmanDefeated ?? false,
+      skipVendor: s.skipVendor ?? false,
     }));
   }, []);
 
@@ -374,6 +376,7 @@ export function useGameEngine() {
       greaseChoicesLeft: saveData.state.greaseChoicesLeft ?? 0,
       ngPlus: saveData.state.ngPlus ?? 0,
       corruptedFreshmanDefeated: saveData.state.corruptedFreshmanDefeated ?? false,
+      skipVendor: saveData.state.skipVendor ?? false,
     };
     if (getGlobalDoomscrollerUnlocked() && !loadedState.achievements.includes("matteo-phone") && !loadedState.unclaimedAchievements.includes("matteo-phone")) {
       loadedState = { ...loadedState, achievements: [...loadedState.achievements, "matteo-phone"] };
@@ -886,7 +889,7 @@ export function useGameEngine() {
           let showVendor = false;
           let newMicahVisitedRun = s.micahVisitedRun;
           let newMicahVisitedFloors = s.micahVisitedFloors;
-          if (!currentEncounter.isBoss) {
+          if (!currentEncounter.isBoss && !s.skipVendor) {
             if (s.activeRaidId === "tower") {
               const currentFloor = Math.floor(s.encounterIndex / 10);
               const positionInFloor = s.encounterIndex % 10;
@@ -1353,6 +1356,10 @@ export function useGameEngine() {
     });
   }, []);
 
+  const toggleSkipVendor = useCallback(() => {
+    setState((s) => ({ ...s, skipVendor: !s.skipVendor }));
+  }, []);
+
   const upgradeItem = useCallback((instanceId: string) => {
     setState((s) => {
       const idx = s.inventory.findIndex((i) => i.instanceId === instanceId);
@@ -1423,5 +1430,6 @@ export function useGameEngine() {
     ZONES,
     enterNewGamePlus,
     continueTowerFloor,
+    toggleSkipVendor,
   };
 }
