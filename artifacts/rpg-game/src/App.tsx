@@ -2613,10 +2613,14 @@ function GameContent() {
               const cost = maxed ? 0 : getUpgradeCost(item.def.rarityColor, level);
               const canAfford = state.gold >= cost;
               const rarityLabel =
+                item.def.rarityTier === "mythic" ? "Mythic" :
+                item.def.rarityTier === "exotic" ? "Exotic" :
+                item.def.rarityTier === "eternal" ? "Eternal" :
                 item.def.rarityColor === "#4ade80" ? "Uncommon" :
                 item.def.rarityColor === "#60a5fa" ? "Rare" :
                 item.def.rarityColor === "#c084fc" ? "Epic" :
-                item.def.rarityColor === "#fb923c" ? "Legendary" : "Common";
+                item.def.rarityColor === "#fb923c" ? "Legendary" :
+                item.def.rarityColor ? "Common" : "Common";
               return (
                 <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 transition-all ${!maxed && canAfford ? `border-border bg-card/60 hover:border-primary/40 ${rarityTierClass(item.def.rarityTier)}` : "border-border/30 bg-background/20 opacity-60"}`}>
                   <div className="flex items-center gap-3 text-left flex-1 min-w-0">
