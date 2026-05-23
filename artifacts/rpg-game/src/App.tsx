@@ -2786,16 +2786,24 @@ function GameContent() {
                                 </div>
                               </div>
                               {sellConfirm === key ? (
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <span className="text-[10px] font-serif text-muted-foreground whitespace-nowrap">Sell{count > 1 ? ` 1 for` : " for"} 🪙{sellVal.toLocaleString()}?</span>
-                                  <button
-                                    className="px-2 py-1 rounded text-[10px] font-bold font-serif border border-border/50 text-muted-foreground hover:bg-card transition-colors"
-                                    onClick={() => setSellConfirm(null)}
-                                  >No</button>
-                                  <button
-                                    className="px-2 py-1 rounded text-[10px] font-bold font-serif bg-rose-700 hover:bg-rose-600 text-white transition-colors"
-                                    onClick={() => { game.sellItem(item.instanceId); setSellConfirm(null); }}
-                                  >Yes</button>
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                  <span className="text-[10px] font-serif text-muted-foreground whitespace-nowrap">Sell how many?</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      className="px-2 py-1 rounded text-[10px] font-bold font-serif border border-border/50 text-muted-foreground hover:bg-card transition-colors"
+                                      onClick={() => setSellConfirm(null)}
+                                    >Cancel</button>
+                                    <button
+                                      className="px-2 py-1 rounded text-[10px] font-bold font-serif bg-rose-800 hover:bg-rose-700 text-white transition-colors"
+                                      onClick={() => { game.sellItem(item.instanceId); setSellConfirm(null); }}
+                                    >1 · 🪙{sellVal.toLocaleString()}</button>
+                                    {count > 1 && (
+                                      <button
+                                        className="px-2 py-1 rounded text-[10px] font-bold font-serif bg-rose-600 hover:bg-rose-500 text-white transition-colors"
+                                        onClick={() => { game.sellAllOfType(item.def.id); setSellConfirm(null); }}
+                                      >All {count} · 🪙{(sellVal * count).toLocaleString()}</button>
+                                    )}
+                                  </div>
                                 </div>
                               ) : (
                                 <Button
@@ -2803,7 +2811,7 @@ function GameContent() {
                                   className="font-serif shrink-0 bg-rose-700 hover:bg-rose-600 text-white text-xs"
                                   onClick={() => setSellConfirm(key)}
                                 >
-                                  🪙 {sellVal.toLocaleString()}
+                                  Sell{count > 1 ? ` ×${count}` : ""} · 🪙{sellVal.toLocaleString()}
                                 </Button>
                               )}
                             </div>

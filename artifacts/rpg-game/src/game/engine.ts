@@ -1295,7 +1295,6 @@ export function useGameEngine() {
       const idx = s.inventory.findIndex((i) => i.instanceId === instanceId);
       if (idx === -1) return s;
       const item = s.inventory[idx];
-      const sellValue = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0);
       const newInventory = s.inventory.filter((_, i) => i !== idx);
 
       let newEquippedItemId = s.equippedItemId;
@@ -1313,15 +1312,32 @@ export function useGameEngine() {
         newEquippedArmorId = null;
       }
 
+      const sellValueFixed = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0, item.def.id);
       return {
         ...s,
         inventory: newInventory,
-        gold: s.gold + sellValue,
+        gold: s.gold + sellValueFixed,
         equippedItemId: newEquippedItemId,
         equippedArmorId: newEquippedArmorId,
         playerMaxHp: newMaxHp,
         playerHp: newHp,
-        itemActionMessage: `Sold ${item.def.name} for 🪙 ${sellValue.toLocaleString()}`,
+        itemActionMessage: `Sold ${item.def.name} for 🪙 ${sellValueFixed.toLocaleString()}`,
+      };
+    });
+  }, []);
+
+  const sellAllOfType = useCallback((defId: string) => {
+    setState((s) => {
+      const toSell = s.inventory.filter((i) => i.def.id === defId);
+      if (toSell.length === 0) return s;
+      const perItem = getSellValue(toSell[0].def.rarityColor, toSell[0].upgradeLevel ?? 0, defId);
+      const totalGold = perItem * toSell.length;
+      const newInventory = s.inventory.filter((i) => i.def.id !== defId);
+      return {
+        ...s,
+        inventory: newInventory,
+        gold: s.gold + totalGold,
+        itemActionMessage: `Sold ${toSell.length}× ${toSell[0].def.name} for 🪙 ${totalGold.toLocaleString()}`,
       };
     });
   }, []);
@@ -1390,6 +1406,7 @@ export function useGameEngine() {
     buyLightningGrease,
     applyGrease,
     sellItem,
+    sellAllOfType,
     upgradeItem,
     lastSavedAt,
     ZONES,
