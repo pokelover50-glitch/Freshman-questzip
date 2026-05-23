@@ -360,6 +360,8 @@ export function useGameEngine() {
       micahVisitedFloors: saveData.state.micahVisitedFloors ?? [],
       activeGreaseId: saveData.state.activeGreaseId ?? null,
       greaseChoicesLeft: saveData.state.greaseChoicesLeft ?? 0,
+      ngPlus: saveData.state.ngPlus ?? 0,
+      corruptedFreshmanDefeated: saveData.state.corruptedFreshmanDefeated ?? false,
     };
     if (getGlobalDoomscrollerUnlocked() && !loadedState.achievements.includes("matteo-phone") && !loadedState.unclaimedAchievements.includes("matteo-phone")) {
       loadedState = { ...loadedState, achievements: [...loadedState.achievements, "matteo-phone"] };
@@ -1113,23 +1115,29 @@ export function useGameEngine() {
       if (!canEnterNgPlus(s)) return s;
       const ng = s.ngPlus ?? 0;
       const cost = getNgPlusGoldReq(ng);
-      return getInitialState({
-        barrettDefeated: s.barrettDefeated,
-        crownTaken: s.crownTaken,
-        completedRaids: s.completedRaids,
-        mobsDefeated: s.mobsDefeated,
-        achievements: s.achievements,
-        unclaimedAchievements: s.unclaimedAchievements,
-        doomscrollerUnlocked: s.doomscrollerUnlocked,
-        towerCrushed: s.towerCrushed,
-        gold: s.gold - cost,
-        level: s.level,
-        xp: s.xp,
-        ngPlus: ng + 1,
-        corruptedFreshmanDefeated: false,
-      });
+      const newState: GameState = {
+        ...getInitialState({
+          barrettDefeated: s.barrettDefeated,
+          crownTaken: s.crownTaken,
+          completedRaids: s.completedRaids,
+          mobsDefeated: s.mobsDefeated,
+          achievements: s.achievements,
+          unclaimedAchievements: s.unclaimedAchievements,
+          doomscrollerUnlocked: s.doomscrollerUnlocked,
+          towerCrushed: s.towerCrushed,
+          gold: s.gold - cost,
+          level: s.level,
+          xp: s.xp,
+          ngPlus: ng + 1,
+          corruptedFreshmanDefeated: false,
+        }),
+        phase: "main-menu",
+      };
+      // Persist immediately so the slot reflects the NG+ state right away
+      saveGameToSlot(activeSlot, newState);
+      return newState;
     });
-  }, []);
+  }, [activeSlot]);
 
   const buyShopItem = useCallback((itemId: string) => {
     setState((s) => {
