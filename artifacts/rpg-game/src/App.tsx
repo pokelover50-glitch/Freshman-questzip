@@ -12,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import type { GearItemDef, GearItemInstance } from "./game/types";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getAllSlotSaves, deleteSlotSave, formatSaveDate, migrateLegacySave, type SaveSlot } from "./game/saveLoad";
+import { LeaderboardPanel } from "./components/LeaderboardPanel";
 import { ZONE_NAMES_SHORT, xpForLevel } from "./game/encounters";
 import { CHEST_LOOT_POOLS, rollChestDrop } from "./game/gear";
 
@@ -828,6 +829,7 @@ function GameContent() {
   const prevLevelRef = useRef<number | null>(null);
   const [levelUpBanner, setLevelUpBanner] = useState<number | null>(null);
   const [showNgPanel, setShowNgPanel] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   // Detect gold increases and trigger floating popup
   useEffect(() => {
@@ -2789,6 +2791,17 @@ function GameContent() {
         </>
       )}
 
+      {/* Leaderboard floating button */}
+      {state.phase !== "title" && (
+        <button
+          onClick={() => setShowLeaderboard(true)}
+          className="fixed bottom-4 left-[11rem] z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-yellow-500/60 hover:bg-yellow-500/10 transition-all duration-200 font-serif text-sm text-foreground shadow-lg"
+        >
+          <span className="text-base">📊</span>
+          <span>Leaderboard</span>
+        </button>
+      )}
+
       {/* Achievements floating button */}
       <button
         onClick={() => setShowAchievements((v) => !v)}
@@ -2817,6 +2830,17 @@ function GameContent() {
             mobsDefeated={state.mobsDefeated}
             onClose={() => setShowAchievements(false)}
             onClaim={game.claimAchievement}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showLeaderboard && (
+          <LeaderboardPanel
+            onClose={() => setShowLeaderboard(false)}
+            currentLevel={state.level}
+            currentNgPlus={state.ngPlus ?? 0}
+            currentClass={state.selectedClass?.id ?? null}
           />
         )}
       </AnimatePresence>
