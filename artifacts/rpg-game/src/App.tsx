@@ -2986,7 +2986,7 @@ function GameContent() {
       {state.phase !== "title" && (
         <button
           onClick={() => setShowLeaderboard(true)}
-          className="fixed bottom-4 left-[11rem] z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-yellow-500/60 hover:bg-yellow-500/10 transition-all duration-200 font-serif text-sm text-foreground shadow-lg"
+          className="fixed bottom-[3.75rem] left-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-yellow-500/60 hover:bg-yellow-500/10 transition-all duration-200 font-serif text-sm text-foreground shadow-lg"
         >
           <span className="text-base">📊</span>
           <span>Leaderboard</span>
