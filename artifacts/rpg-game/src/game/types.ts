@@ -141,4 +141,5 @@ export interface GameState {
   ngPlus: number;
   corruptedFreshmanDefeated: boolean;
   skipVendor: boolean;
+  skipChestDrops: boolean;
 }
