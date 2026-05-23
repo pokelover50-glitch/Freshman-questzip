@@ -84,9 +84,20 @@ export const SHOP_ITEMS = [
     }),
   },
   {
+    id: "wooden-chest",
+    name: "Wooden Chest",
+    emoji: "📦",
+    price: 50,
+    description: "Contains random gear.",
+    make: (): GearItemInstance => ({
+      instanceId: `shop-wooden-${Math.random().toString(36).slice(2, 9)}`,
+      def: CHEST_ITEMS.find((c) => c.id === "wooden-chest")!,
+    }),
+  },
+  {
     id: "bronze-chest",
     name: "Bronze Chest",
-    emoji: "📦",
+    emoji: "🧰",
     price: 150,
     description: "Contains random gear.",
     make: (): GearItemInstance => ({
