@@ -827,6 +827,7 @@ function GameContent() {
   const xpPopupIdRef = useRef(0);
   const prevLevelRef = useRef<number | null>(null);
   const [levelUpBanner, setLevelUpBanner] = useState<number | null>(null);
+  const [showNgPanel, setShowNgPanel] = useState(false);
 
   // Detect gold increases and trigger floating popup
   useEffect(() => {
@@ -2693,6 +2694,100 @@ function GameContent() {
           />
         )}
       </AnimatePresence>
+
+      {/* ── NG+ Tracker floating button + panel ── */}
+      {state.phase !== "title" && (state.ngPlus ?? 0) < 10 && (
+        <>
+          {/* Expandable requirements panel */}
+          <AnimatePresence>
+            {showNgPanel && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.96 }}
+                transition={{ duration: 0.18 }}
+                className="fixed bottom-16 right-4 z-50 w-64 rounded-xl border border-fuchsia-500/40 bg-card/95 backdrop-blur-md shadow-[0_0_24px_-4px_rgba(232,121,249,0.35)] p-4 font-serif"
+              >
+                <p className="text-xs uppercase tracking-widest text-fuchsia-400/80 font-bold mb-3">
+                  ✨ NG+{(state.ngPlus ?? 0) + 1} Requirements
+                </p>
+                <ul className="space-y-2 text-sm">
+                  {/* Crown */}
+                  <li className="flex items-center gap-2">
+                    {state.crownTaken ? (
+                      <span className="text-green-400 text-base leading-none">✓</span>
+                    ) : (
+                      <span className="text-muted-foreground/40 text-base leading-none">○</span>
+                    )}
+                    <span className={state.crownTaken ? "text-green-400" : "text-muted-foreground/70"}>
+                      👑 Take the Crown
+                    </span>
+                  </li>
+                  {/* Corrupted Freshman */}
+                  <li className="flex items-center gap-2">
+                    {state.corruptedFreshmanDefeated ? (
+                      <span className="text-green-400 text-base leading-none">✓</span>
+                    ) : (
+                      <span className="text-muted-foreground/40 text-base leading-none">○</span>
+                    )}
+                    <span className={state.corruptedFreshmanDefeated ? "text-green-400" : "text-muted-foreground/70"}>
+                      💀 Defeat Corrupted Freshman
+                    </span>
+                  </li>
+                  {/* Gold */}
+                  <li className="flex items-center gap-2">
+                    {state.gold >= getNgPlusGoldReq(state.ngPlus ?? 0) ? (
+                      <span className="text-green-400 text-base leading-none">✓</span>
+                    ) : (
+                      <span className="text-muted-foreground/40 text-base leading-none">○</span>
+                    )}
+                    <span className={state.gold >= getNgPlusGoldReq(state.ngPlus ?? 0) ? "text-green-400" : "text-muted-foreground/70"}>
+                      🪙 {state.gold.toLocaleString()} / {getNgPlusGoldReq(state.ngPlus ?? 0).toLocaleString()} Gold
+                    </span>
+                  </li>
+                </ul>
+                {canEnterNgPlus(state) && state.phase === "main-menu" && (
+                  <button
+                    onClick={() => { game.enterNewGamePlus(); setShowNgPanel(false); }}
+                    className="mt-4 w-full py-2 rounded-lg border border-fuchsia-500/60 bg-fuchsia-950/50 hover:bg-fuchsia-900/70 text-fuchsia-300 text-sm font-serif transition-all"
+                  >
+                    ✨ Enter NG+{(state.ngPlus ?? 0) + 1}
+                  </button>
+                )}
+                {canEnterNgPlus(state) && state.phase !== "main-menu" && (
+                  <p className="mt-3 text-xs text-fuchsia-400/60 italic text-center">
+                    Go to the hub to enter NG+
+                  </p>
+                )}
+                <p className="mt-3 text-xs text-muted-foreground/40 italic text-center">
+                  Enemies scale harder · Exclusive gear unlocks
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Floating button */}
+          {canEnterNgPlus(state) ? (
+            <motion.button
+              animate={{ boxShadow: ["0 0 8px -2px rgba(232,121,249,0.4)", "0 0 22px -2px rgba(232,121,249,0.9)", "0 0 8px -2px rgba(232,121,249,0.4)"] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              onClick={() => setShowNgPanel((v) => !v)}
+              className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-fuchsia-950/80 border border-fuchsia-500/60 hover:border-fuchsia-400 hover:bg-fuchsia-900/80 transition-all duration-200 font-serif text-sm text-fuchsia-300 shadow-lg"
+            >
+              <span className="text-base">✨</span>
+              <span>NG+{(state.ngPlus ?? 0) + 1} Ready!</span>
+            </motion.button>
+          ) : (
+            <button
+              onClick={() => setShowNgPanel((v) => !v)}
+              className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-fuchsia-500/40 hover:bg-fuchsia-950/30 transition-all duration-200 font-serif text-sm text-muted-foreground shadow-lg"
+            >
+              <span className="text-base">✨</span>
+              <span>NG+{(state.ngPlus ?? 0) + 1}</span>
+            </button>
+          )}
+        </>
+      )}
 
       {/* Achievements floating button */}
       <button
