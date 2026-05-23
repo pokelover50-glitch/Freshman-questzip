@@ -573,8 +573,13 @@ function InventoryPanel({
                     >
                       <span className="text-3xl shrink-0">{item.def.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <p
+                        <motion.p
                           className={`font-serif font-bold text-sm ${isEquipped ? "text-blue-300" : ""}`}
+                          animate={!isEquipped && item.def.rarityColor ? {
+                            opacity: [0.72, 1, 0.72],
+                            textShadow: [`0 0 5px ${item.def.rarityColor}33`, `0 0 14px ${item.def.rarityColor}99`, `0 0 5px ${item.def.rarityColor}33`],
+                          } : undefined}
+                          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
                           style={!isEquipped && item.def.rarityColor ? { color: item.def.rarityColor } : undefined}
                         >
                           {item.def.name}
@@ -582,7 +587,7 @@ function InventoryPanel({
                             <span className="ml-1.5 text-[10px] font-bold text-violet-400 font-sans">+{item.upgradeLevel}</span>
                           )}
                           {isEquipped && <span className="ml-2 text-[10px] text-blue-400/80 uppercase tracking-wide font-sans">Equipped</span>}
-                        </p>
+                        </motion.p>
                         <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
                         {item.def.hpBonus != null && (
                           <p className="text-[11px] font-serif text-blue-400/80 mt-0.5">
@@ -629,8 +634,13 @@ function InventoryPanel({
                     >
                       <span className="text-3xl shrink-0">{item.def.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <p
+                        <motion.p
                           className={`font-serif font-bold text-sm ${isEquipped ? "text-yellow-300" : ""}`}
+                          animate={!isEquipped && item.def.rarityColor ? {
+                            opacity: [0.72, 1, 0.72],
+                            textShadow: [`0 0 5px ${item.def.rarityColor}33`, `0 0 14px ${item.def.rarityColor}99`, `0 0 5px ${item.def.rarityColor}33`],
+                          } : undefined}
+                          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
                           style={!isEquipped && item.def.rarityColor ? { color: item.def.rarityColor } : undefined}
                         >
                           {item.def.name}
@@ -638,7 +648,7 @@ function InventoryPanel({
                             <span className="ml-1.5 text-[10px] font-bold text-violet-400 font-sans">+{item.upgradeLevel}</span>
                           )}
                           {isEquipped && <span className="ml-2 text-[10px] text-yellow-400/80 uppercase tracking-wide font-sans">Equipped</span>}
-                        </p>
+                        </motion.p>
                         <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
                         {item.def.damage != null && (
                           <p className="text-[11px] font-serif text-amber-400/80 mt-0.5">
@@ -692,10 +702,18 @@ function InventoryPanel({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-serif font-bold text-sm" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>
+                      <motion.p
+                        className="font-serif font-bold text-sm"
+                        animate={item.def.rarityColor ? {
+                          opacity: [0.72, 1, 0.72],
+                          textShadow: [`0 0 5px ${item.def.rarityColor}33`, `0 0 14px ${item.def.rarityColor}99`, `0 0 5px ${item.def.rarityColor}33`],
+                        } : undefined}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                        style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}
+                      >
                         {item.def.name}
                         {count > 1 && <span className="ml-1.5 text-[11px] text-orange-400/70 font-sans">×{count}</span>}
-                      </p>
+                      </motion.p>
                       <p className="text-xs text-muted-foreground leading-relaxed">{item.def.description}</p>
                     </div>
                     <button
@@ -2531,11 +2549,19 @@ function GameContent() {
                           <div className="flex items-center gap-2 text-left min-w-0">
                             <span className="text-xl shrink-0">{item.def.emoji}</span>
                             <div className="min-w-0">
-                              <p className="font-serif text-sm font-bold truncate" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>
+                              <motion.p
+                                className="font-serif text-sm font-bold truncate"
+                                animate={item.def.rarityColor ? {
+                                  opacity: [0.72, 1, 0.72],
+                                  textShadow: [`0 0 5px ${item.def.rarityColor}33`, `0 0 14px ${item.def.rarityColor}99`, `0 0 5px ${item.def.rarityColor}33`],
+                                } : undefined}
+                                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                                style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}
+                              >
                                 {item.def.name}
                                 {(item.upgradeLevel ?? 0) > 0 && <span className="ml-1 text-violet-400">+{item.upgradeLevel}</span>}
                                 {isEquipped && <span className="ml-1.5 text-[10px] text-yellow-400/70 uppercase">Equipped</span>}
-                              </p>
+                              </motion.p>
                             </div>
                           </div>
                           <Button
@@ -2596,7 +2622,15 @@ function GameContent() {
                   <div className="flex items-center gap-3 text-left flex-1 min-w-0">
                     <span className="text-2xl shrink-0">{item.def.emoji}</span>
                     <div className="min-w-0">
-                      <p className="font-serif font-bold text-foreground truncate" style={{ color: item.def.rarityColor }}>{item.def.name}</p>
+                      <motion.p
+                        className="font-serif font-bold text-foreground truncate"
+                        animate={item.def.rarityColor ? {
+                          opacity: [0.72, 1, 0.72],
+                          textShadow: [`0 0 5px ${item.def.rarityColor}33`, `0 0 14px ${item.def.rarityColor}99`, `0 0 5px ${item.def.rarityColor}33`],
+                        } : undefined}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                        style={{ color: item.def.rarityColor }}
+                      >{item.def.name}</motion.p>
                       <p className="text-xs text-muted-foreground">{rarityLabel} · {label}</p>
                       <div className="flex items-center gap-1 mt-0.5">
                         {[1,2,3,4,5].map((n) => (
@@ -2825,12 +2859,20 @@ function GameContent() {
                               <div className="flex items-center gap-2 text-left min-w-0">
                                 <span className="text-xl shrink-0">{item.def.emoji}</span>
                                 <div className="min-w-0">
-                                  <p className="font-serif text-sm font-bold truncate" style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}>
+                                  <motion.p
+                                    className="font-serif text-sm font-bold truncate"
+                                    animate={item.def.rarityColor ? {
+                                      opacity: [0.72, 1, 0.72],
+                                      textShadow: [`0 0 5px ${item.def.rarityColor}33`, `0 0 14px ${item.def.rarityColor}99`, `0 0 5px ${item.def.rarityColor}33`],
+                                    } : undefined}
+                                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                                    style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}
+                                  >
                                     {item.def.name}
                                     {count > 1 && <span className="ml-1.5 text-[11px] text-muted-foreground/60 font-sans">×{count}</span>}
                                     {(item.upgradeLevel ?? 0) > 0 && <span className="ml-1 text-violet-400">+{item.upgradeLevel}</span>}
                                     {isEquipped && <span className="ml-1.5 text-[10px] text-yellow-400/70 uppercase">Equipped</span>}
-                                  </p>
+                                  </motion.p>
                                 </div>
                               </div>
                               {sellConfirm === key ? (
