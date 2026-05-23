@@ -2546,39 +2546,79 @@ function GameContent() {
                 <div className="w-full max-w-sm space-y-3">
                   <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase text-left">Sell Items</h3>
                   <div className="flex flex-col gap-2">
-                    {state.inventory.map((item) => {
-                      const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0, item.def.id);
-                      const isEquipped = item.def.id === state.equippedItemId || item.def.id === state.equippedArmorId;
-                      return (
-                        <div key={item.instanceId} className="rounded-xl border border-border/50 bg-background/20 p-3 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2 text-left min-w-0">
-                            <span className="text-xl shrink-0">{item.def.emoji}</span>
-                            <div className="min-w-0">
-                              <motion.p
-                                className="font-serif text-sm font-bold truncate"
-                                animate={item.def.rarityColor ? {
-                                  opacity: [0.72, 1, 0.72],
-                                  textShadow: [`0 0 5px ${item.def.rarityColor}33`, `0 0 14px ${item.def.rarityColor}99`, `0 0 5px ${item.def.rarityColor}33`],
-                                } : undefined}
-                                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                                style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}
-                              >
-                                {item.def.name}
-                                {(item.upgradeLevel ?? 0) > 0 && <span className="ml-1 text-violet-400">+{item.upgradeLevel}</span>}
-                                {isEquipped && <span className="ml-1.5 text-[10px] text-yellow-400/70 uppercase">Equipped</span>}
-                              </motion.p>
+                    {(() => {
+                      const groups: Array<{ key: string; items: typeof state.inventory }> = [];
+                      const seen = new Set<string>();
+                      for (const item of state.inventory) {
+                        const isStackable = item.def.isChest === true || item.def.stackable === true;
+                        if (isStackable) {
+                          if (!seen.has(item.def.id)) {
+                            seen.add(item.def.id);
+                            groups.push({ key: item.def.id, items: state.inventory.filter(i => i.def.id === item.def.id) });
+                          }
+                        } else {
+                          groups.push({ key: item.instanceId, items: [item] });
+                        }
+                      }
+                      return groups.map(({ key, items }) => {
+                        const item = items[0];
+                        const count = items.length;
+                        const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0, item.def.id);
+                        const isEquipped = item.def.id === state.equippedItemId || item.def.id === state.equippedArmorId;
+                        return (
+                          <div key={key} className={`rounded-xl border border-border/50 bg-background/20 p-3 flex items-center justify-between gap-3 ${rarityTierClass(item.def.rarityTier)}`}>
+                            <div className="flex items-center gap-2 text-left min-w-0">
+                              <span className="text-xl shrink-0">{item.def.emoji}</span>
+                              <div className="min-w-0">
+                                <motion.p
+                                  className="font-serif text-sm font-bold truncate"
+                                  animate={item.def.rarityColor ? {
+                                    opacity: [0.72, 1, 0.72],
+                                    textShadow: [`0 0 5px ${item.def.rarityColor}33`, `0 0 14px ${item.def.rarityColor}99`, `0 0 5px ${item.def.rarityColor}33`],
+                                  } : undefined}
+                                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                                  style={item.def.rarityColor ? { color: item.def.rarityColor } : {}}
+                                >
+                                  {item.def.name}
+                                  {count > 1 && <span className="ml-1.5 text-[11px] text-muted-foreground/60 font-sans">×{count}</span>}
+                                  {(item.upgradeLevel ?? 0) > 0 && <span className="ml-1 text-violet-400">+{item.upgradeLevel}</span>}
+                                  {isEquipped && <span className="ml-1.5 text-[10px] text-yellow-400/70 uppercase">Equipped</span>}
+                                </motion.p>
+                              </div>
                             </div>
+                            {sellConfirm === key ? (
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <span className="text-[10px] font-serif text-muted-foreground whitespace-nowrap">Sell how many?</span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    className="px-2 py-1 rounded text-[10px] font-bold font-serif border border-border/50 text-muted-foreground hover:bg-card transition-colors"
+                                    onClick={() => setSellConfirm(null)}
+                                  >Cancel</button>
+                                  <button
+                                    className="px-2 py-1 rounded text-[10px] font-bold font-serif bg-rose-800 hover:bg-rose-700 text-white transition-colors"
+                                    onClick={() => { game.sellItem(item.instanceId); setSellConfirm(null); }}
+                                  >1 · 🪙{sellVal.toLocaleString()}</button>
+                                  {count > 1 && (
+                                    <button
+                                      className="px-2 py-1 rounded text-[10px] font-bold font-serif bg-rose-600 hover:bg-rose-500 text-white transition-colors"
+                                      onClick={() => { game.sellAllOfType(item.def.id); setSellConfirm(null); }}
+                                    >All {count} · 🪙{(sellVal * count).toLocaleString()}</button>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                className="font-serif shrink-0 bg-rose-700 hover:bg-rose-600 text-white text-xs"
+                                onClick={() => setSellConfirm(key)}
+                              >
+                                Sell{count > 1 ? ` ×${count}` : ""} · 🪙{sellVal.toLocaleString()}
+                              </Button>
+                            )}
                           </div>
-                          <Button
-                            size="sm"
-                            className="font-serif shrink-0 bg-rose-700 hover:bg-rose-600 text-white text-xs"
-                            onClick={() => game.sellItem(item.instanceId)}
-                          >
-                            🪙 {sellVal.toLocaleString()}
-                          </Button>
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
                   <p className="text-[10px] text-muted-foreground/40 font-serif text-left">50% of base value + 50% of upgrades invested</p>
                 </div>
