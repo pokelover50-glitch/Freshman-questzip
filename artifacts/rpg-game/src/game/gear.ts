@@ -549,13 +549,13 @@ function ngaById(id: string): GearItemDef {
   return ARMOR_ITEMS.find((a) => a.id === id)!;
 }
 
-const NG_GOLD_POOL: ChestLootEntry[] = [
+export const NG_GOLD_POOL: ChestLootEntry[] = [
   { item: ngaById("vollys-chestplate"), weight: 80 },
   { item: ngwById("saber-of-iowa"), weight: 15 },
   { item: ngwById("cmilk-katana"), weight: 5 },
 ];
 
-const NG_OBSIDIAN_POOL: ChestLootEntry[] = [
+export const NG_OBSIDIAN_POOL: ChestLootEntry[] = [
   { item: ngaById("divine-armor"), weight: 70 },
   { item: ngwById("divine-daggers"), weight: 27 },
   { item: ngwById("void-rapier"), weight: 2.75 },

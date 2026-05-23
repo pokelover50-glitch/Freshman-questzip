@@ -15,7 +15,7 @@ import { getAllSlotSaves, deleteSlotSave, formatSaveDate, migrateLegacySave, typ
 import { LeaderboardPanel } from "./components/LeaderboardPanel";
 import { validateUsername } from "./lib/profanityFilter";
 import { ZONE_NAMES_SHORT, xpForLevel } from "./game/encounters";
-import { CHEST_LOOT_POOLS, rollChestDrop } from "./game/gear";
+import { CHEST_LOOT_POOLS, rollChestDrop, NG_GOLD_POOL, NG_OBSIDIAN_POOL, rollNgPlusChestDrop } from "./game/gear";
 
 const ACHIEVEMENTS = [
   {
@@ -241,9 +241,16 @@ function ChestSpinner({
   onClose: () => void;
   ownedItemIds?: string[];
 }) {
-  const pool = CHEST_LOOT_POOLS[chest.def.id] ?? [];
+  const isNgChest = chest.def.id === "gold-chest" || chest.def.id === "obsidian-chest";
+  const pool = isNgChest
+    ? (chest.def.id === "gold-chest" ? NG_GOLD_POOL : NG_OBSIDIAN_POOL)
+    : (CHEST_LOOT_POOLS[chest.def.id] ?? []);
   const wonItemRef = useRef<GearItemDef | null>(null);
-  if (!wonItemRef.current) wonItemRef.current = rollChestDrop(chest.def.id);
+  if (!wonItemRef.current) {
+    wonItemRef.current = isNgChest
+      ? rollNgPlusChestDrop(chest.def.id)
+      : rollChestDrop(chest.def.id);
+  }
   const wonItem = wonItemRef.current;
 
   const [displayIdx, setDisplayIdx] = useState(0);
