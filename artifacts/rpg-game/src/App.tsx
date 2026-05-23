@@ -316,7 +316,17 @@ function ChestSpinner({
                     className="absolute inset-0 flex flex-col items-center justify-center gap-1.5"
                   >
                     <span className="text-6xl">{(currentItem?.item.id === "wand-67" && !ownedItemIds.includes("wand-67")) ? "❓" : (currentItem?.item.emoji ?? "✨")}</span>
-                    <p className="font-serif text-sm text-muted-foreground" style={(currentItem?.item.id !== "wand-67" || ownedItemIds.includes("wand-67")) && currentItem?.item.rarityColor ? { color: currentItem.item.rarityColor } : undefined}>{(currentItem?.item.id === "wand-67" && !ownedItemIds.includes("wand-67")) ? "???" : (currentItem?.item.name ?? "…")}</p>
+                    <motion.p
+                      className="font-serif text-sm font-semibold"
+                      animate={currentItem?.item.rarityColor ? {
+                        opacity: [0.65, 1, 0.65],
+                        textShadow: [`0 0 6px ${currentItem.item.rarityColor}55`, `0 0 18px ${currentItem.item.rarityColor}cc`, `0 0 6px ${currentItem.item.rarityColor}55`],
+                      } : undefined}
+                      transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                      style={currentItem?.item.rarityColor ? { color: currentItem.item.rarityColor } : undefined}
+                    >
+                      {(currentItem?.item.id === "wand-67" && !ownedItemIds.includes("wand-67")) ? "???" : (currentItem?.item.name ?? "…")}
+                    </motion.p>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -333,7 +343,17 @@ function ChestSpinner({
                     >
                       {wonItem?.emoji ?? "✨"}
                     </motion.span>
-                    <p className="font-serif font-bold text-base leading-tight" style={wonItem?.rarityColor ? { color: wonItem.rarityColor } : undefined}>{wonItem?.name ?? "Unknown Item"}</p>
+                    <motion.p
+                      className="font-serif font-bold text-base leading-tight"
+                      animate={wonItem?.rarityColor ? {
+                        opacity: [0.7, 1, 0.7],
+                        textShadow: [`0 0 8px ${wonItem.rarityColor}55`, `0 0 24px ${wonItem.rarityColor}dd`, `0 0 8px ${wonItem.rarityColor}55`],
+                      } : undefined}
+                      transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                      style={wonItem?.rarityColor ? { color: wonItem.rarityColor } : undefined}
+                    >
+                      {wonItem?.name ?? "Unknown Item"}
+                    </motion.p>
                     <p className="text-[11px] text-muted-foreground text-center leading-relaxed">{wonItem?.description}</p>
                   </motion.div>
                 )}
@@ -374,25 +394,46 @@ function ChestSpinner({
               return (
                 <motion.div
                   key={entry.item.id}
-                  animate={isSpinning ? { scale: 1.04 } : { scale: 1 }}
-                  transition={{ duration: 0.1 }}
+                  animate={
+                    isWon
+                      ? { scale: [1, 1.04, 1], opacity: [0.75, 1, 0.75] }
+                      : isSpinning
+                      ? { scale: 1.04 }
+                      : { scale: 1 }
+                  }
+                  transition={
+                    isWon
+                      ? { duration: 1.3, repeat: Infinity, ease: "easeInOut" }
+                      : { duration: 0.1 }
+                  }
                   className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors text-left ${
                     isWon
-                      ? "bg-yellow-500/20 border border-yellow-500/50"
+                      ? "border"
                       : isSpinning
-                      ? "bg-primary/15 border border-primary/40"
+                      ? "border"
                       : "border border-transparent"
                   }`}
+                  style={
+                    isWon && entry.item.rarityColor
+                      ? { borderColor: entry.item.rarityColor + "80", backgroundColor: entry.item.rarityColor + "18" }
+                      : isSpinning && entry.item.rarityColor
+                      ? { borderColor: entry.item.rarityColor + "55", backgroundColor: entry.item.rarityColor + "10" }
+                      : undefined
+                  }
                 >
                   <span className="text-base shrink-0">{isHidden ? "❓" : entry.item.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-[11px] font-serif leading-tight truncate ${isWon ? "text-yellow-300 font-bold" : isSpinning ? "text-primary font-semibold" : "font-semibold"}`}
-                      style={!isHidden && !isWon && !isSpinning && entry.item.rarityColor ? { color: entry.item.rarityColor } : undefined}
+                    <motion.p
+                      className="text-[11px] font-serif leading-tight truncate font-semibold"
+                      animate={!isHidden && entry.item.rarityColor && (isWon || isSpinning) ? {
+                        textShadow: [`0 0 4px ${entry.item.rarityColor}44`, `0 0 12px ${entry.item.rarityColor}bb`, `0 0 4px ${entry.item.rarityColor}44`],
+                      } : undefined}
+                      transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                      style={!isHidden && entry.item.rarityColor ? { color: entry.item.rarityColor } : undefined}
                     >
                       {isHidden ? "???" : entry.item.name}
-                    </p>
-                    <p className={`text-[10px] font-mono ${isWon ? "text-yellow-400" : isSpinning ? "text-primary/80" : "text-muted-foreground/60"}`}>
+                    </motion.p>
+                    <p className="text-[10px] font-mono text-muted-foreground/60">
                       {pct}%
                     </p>
                   </div>
