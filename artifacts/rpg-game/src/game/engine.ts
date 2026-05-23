@@ -212,6 +212,7 @@ function getInitialState(
     ngPlus: preserve?.ngPlus ?? 0,
     corruptedFreshmanDefeated: preserve?.corruptedFreshmanDefeated ?? false,
     skipVendor: false,
+    skipChestDrops: false,
   };
 }
 
@@ -322,6 +323,7 @@ export function useGameEngine() {
       ngPlus: s.ngPlus ?? 0,
       corruptedFreshmanDefeated: s.corruptedFreshmanDefeated ?? false,
       skipVendor: s.skipVendor ?? false,
+      skipChestDrops: s.skipChestDrops ?? false,
     }));
   }, []);
 
@@ -377,6 +379,7 @@ export function useGameEngine() {
       ngPlus: saveData.state.ngPlus ?? 0,
       corruptedFreshmanDefeated: saveData.state.corruptedFreshmanDefeated ?? false,
       skipVendor: saveData.state.skipVendor ?? false,
+      skipChestDrops: saveData.state.skipChestDrops ?? false,
     };
     if (getGlobalDoomscrollerUnlocked() && !loadedState.achievements.includes("matteo-phone") && !loadedState.unclaimedAchievements.includes("matteo-phone")) {
       loadedState = { ...loadedState, achievements: [...loadedState.achievements, "matteo-phone"] };
@@ -847,7 +850,7 @@ export function useGameEngine() {
               phase: "tower-floor-complete",
               showOutcome: false,
               inventory: newInventory,
-              pendingDrops: drops,
+              pendingDrops: s.skipChestDrops ? [] : drops,
               defeatedBosses: newDefeatedBosses,
               mobsDefeated: newMobsDefeated,
               unclaimedAchievements: newUnclaimedAchievements,
@@ -867,7 +870,7 @@ export function useGameEngine() {
               phase: "raid-complete",
               showOutcome: false,
               inventory: newInventory,
-              pendingDrops: drops,
+              pendingDrops: s.skipChestDrops ? [] : drops,
               defeatedBosses: newDefeatedBosses,
               completedRaids: [...s.completedRaids, s.activeRaidId!],
               mobsDefeated: newMobsDefeated,
@@ -916,7 +919,7 @@ export function useGameEngine() {
             showOutcome: false,
             lastOutcome: null,
             inventory: newInventory,
-            pendingDrops: drops,
+            pendingDrops: s.skipChestDrops ? [] : drops,
             abilityMessage: null,
             defeatedBosses: newDefeatedBosses,
             mobsDefeated: newMobsDefeated,
@@ -947,7 +950,7 @@ export function useGameEngine() {
             phase: "victory",
             showOutcome: false,
             inventory: newInventory,
-            pendingDrops: drops,
+            pendingDrops: s.skipChestDrops ? [] : drops,
             defeatedBosses: newDefeatedBosses,
             barrettDefeated: true,
             mobsDefeated: newMobsDefeated,
@@ -974,7 +977,7 @@ export function useGameEngine() {
             showOutcome: false,
             lastOutcome: null,
             inventory: newInventory,
-            pendingDrops: drops,
+            pendingDrops: s.skipChestDrops ? [] : drops,
             abilityMessage: null,
             mobsDefeated: newMobsDefeated,
             unclaimedAchievements: newUnclaimedAchievements,
@@ -997,7 +1000,7 @@ export function useGameEngine() {
           showOutcome: false,
           lastOutcome: null,
           inventory: newInventory,
-          pendingDrops: drops,
+          pendingDrops: s.skipChestDrops ? [] : drops,
           abilityMessage: null,
           mobsDefeated: newMobsDefeated,
           unclaimedAchievements: newUnclaimedAchievements,
@@ -1360,6 +1363,10 @@ export function useGameEngine() {
     setState((s) => ({ ...s, skipVendor: !s.skipVendor }));
   }, []);
 
+  const toggleSkipChestDrops = useCallback(() => {
+    setState((s) => ({ ...s, skipChestDrops: !s.skipChestDrops }));
+  }, []);
+
   const upgradeItem = useCallback((instanceId: string) => {
     setState((s) => {
       const idx = s.inventory.findIndex((i) => i.instanceId === instanceId);
@@ -1431,5 +1438,6 @@ export function useGameEngine() {
     enterNewGamePlus,
     continueTowerFloor,
     toggleSkipVendor,
+    toggleSkipChestDrops,
   };
 }

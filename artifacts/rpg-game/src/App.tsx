@@ -1389,17 +1389,32 @@ function GameContent() {
               )}
 
               {/* ── Settings ── */}
-              <div className="w-full max-w-sm rounded-xl border border-border/30 bg-card/40 px-4 py-3 flex items-center justify-between gap-3">
-                <div className="text-left">
-                  <p className="text-sm font-serif text-foreground/80">Skip Vendor (Micah)</p>
-                  <p className="text-[11px] text-muted-foreground/50 font-serif">Disable random vendor interruptions during runs &amp; tower</p>
+              <div className="w-full max-w-sm rounded-xl border border-border/30 bg-card/40 px-4 py-3 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-left">
+                    <p className="text-sm font-serif text-foreground/80">Skip Vendor (Micah)</p>
+                    <p className="text-[11px] text-muted-foreground/50 font-serif">Disable random vendor interruptions during runs &amp; tower</p>
+                  </div>
+                  <button
+                    onClick={game.toggleSkipVendor}
+                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${state.skipVendor ? "bg-primary" : "bg-muted/40 border border-border/60"}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.skipVendor ? "translate-x-5" : "translate-x-0"}`} />
+                  </button>
                 </div>
-                <button
-                  onClick={game.toggleSkipVendor}
-                  className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${state.skipVendor ? "bg-primary" : "bg-muted/40 border border-border/60"}`}
-                >
-                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.skipVendor ? "translate-x-5" : "translate-x-0"}`} />
-                </button>
+                <div className="h-px bg-border/30" />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-left">
+                    <p className="text-sm font-serif text-foreground/80">Skip Drop Popups</p>
+                    <p className="text-[11px] text-muted-foreground/50 font-serif">Items still land in your backpack silently — no popup after each kill</p>
+                  </div>
+                  <button
+                    onClick={game.toggleSkipChestDrops}
+                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${state.skipChestDrops ? "bg-primary" : "bg-muted/40 border border-border/60"}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.skipChestDrops ? "translate-x-5" : "translate-x-0"}`} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between w-full max-w-sm px-1">
