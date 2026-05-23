@@ -13,6 +13,7 @@ import type { GearItemDef, GearItemInstance } from "./game/types";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getAllSlotSaves, deleteSlotSave, formatSaveDate, migrateLegacySave, type SaveSlot } from "./game/saveLoad";
 import { LeaderboardPanel } from "./components/LeaderboardPanel";
+import { validateUsername } from "./lib/profanityFilter";
 import { ZONE_NAMES_SHORT, xpForLevel } from "./game/encounters";
 import { CHEST_LOOT_POOLS, rollChestDrop } from "./game/gear";
 
@@ -830,6 +831,72 @@ function GameContent() {
   const [levelUpBanner, setLevelUpBanner] = useState<number | null>(null);
   const [showNgPanel, setShowNgPanel] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  // ── Username (persisted per device) ──
+  const USERNAME_KEY = "freshman-quest-username";
+  const [username, setUsername] = useState(() => localStorage.getItem(USERNAME_KEY) ?? "");
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameSaving, setUsernameSaving] = useState(false);
+
+  // Refs for unload handler (must not capture stale closure state)
+  const lastLevelRef = useRef(state.level);
+  const lastNgPlusRef = useRef(state.ngPlus ?? 0);
+  const lastClassRef = useRef(state.selectedClass?.id ?? null);
+  const usernameRef = useRef(username);
+
+  useEffect(() => { lastLevelRef.current = state.level; }, [state.level]);
+  useEffect(() => { lastNgPlusRef.current = state.ngPlus ?? 0; }, [state.ngPlus]);
+  useEffect(() => { lastClassRef.current = state.selectedClass?.id ?? null; }, [state.selectedClass]);
+  useEffect(() => { usernameRef.current = username; }, [username]);
+
+  function submitScore(uname: string, level: number, ngPlus: number, cls: string | null) {
+    if (!uname || level < 1) return;
+    fetch("/api/leaderboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playerName: uname, level, ngPlus, characterClass: cls }),
+    }).catch(() => {});
+  }
+
+  // Auto-submit every 5 minutes when in-game
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const uname = usernameRef.current;
+      if (!uname || state.phase === "title") return;
+      submitScore(uname, lastLevelRef.current, lastNgPlusRef.current, lastClassRef.current);
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase]);
+
+  // Submit on page unload (sendBeacon for reliability)
+  useEffect(() => {
+    const handler = () => {
+      const uname = usernameRef.current;
+      if (!uname || lastLevelRef.current < 1) return;
+      const payload = JSON.stringify({
+        playerName: uname,
+        level: lastLevelRef.current,
+        ngPlus: lastNgPlusRef.current,
+        characterClass: lastClassRef.current,
+      });
+      navigator.sendBeacon("/api/leaderboard", new Blob([payload], { type: "application/json" }));
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  function handleUsernameSubmit() {
+    const err = validateUsername(usernameInput);
+    if (err) { setUsernameError(err); return; }
+    setUsernameSaving(true);
+    const trimmed = usernameInput.trim();
+    localStorage.setItem(USERNAME_KEY, trimmed);
+    setUsername(trimmed);
+    setUsernameError(null);
+    setUsernameSaving(false);
+  }
 
   // Detect gold increases and trigger floating popup
   useEffect(() => {
@@ -2838,10 +2905,68 @@ function GameContent() {
         {showLeaderboard && (
           <LeaderboardPanel
             onClose={() => setShowLeaderboard(false)}
+            username={username}
             currentLevel={state.level}
             currentNgPlus={state.ngPlus ?? 0}
-            currentClass={state.selectedClass?.id ?? null}
           />
+        )}
+      </AnimatePresence>
+
+      {/* ── Username prompt overlay (first-time, persists on device) ── */}
+      <AnimatePresence>
+        {!username && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 26 }}
+              className="bg-card border border-primary/40 rounded-2xl shadow-[0_0_60px_-10px_hsl(var(--primary))] p-8 w-full max-w-sm text-center"
+            >
+              <div className="text-5xl mb-4">🎓</div>
+              <h2 className="text-2xl font-serif font-bold text-primary mb-1">Choose Your Name</h2>
+              <p className="text-sm font-serif text-muted-foreground/70 mb-6 leading-relaxed">
+                This name will appear on the global leaderboard and stays on this device.
+              </p>
+              <input
+                autoFocus
+                type="text"
+                placeholder="Enter a name…"
+                value={usernameInput}
+                maxLength={24}
+                onChange={(e) => { setUsernameInput(e.target.value); setUsernameError(null); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleUsernameSubmit(); }}
+                className="w-full text-center text-lg font-serif bg-background border border-border/60 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground/30 outline-none focus:border-primary/60 mb-2"
+              />
+              <AnimatePresence>
+                {usernameError && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-red-400 text-xs font-serif mb-2"
+                  >
+                    {usernameError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+              <p className="text-xs text-muted-foreground/30 font-serif mb-4">
+                2–24 chars · letters, numbers, spaces, _ - .
+              </p>
+              <Button
+                className="w-full font-serif text-base py-6"
+                onClick={handleUsernameSubmit}
+                disabled={usernameSaving || usernameInput.trim().length < 2}
+              >
+                {usernameSaving ? "Saving…" : "Begin Quest →"}
+              </Button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
