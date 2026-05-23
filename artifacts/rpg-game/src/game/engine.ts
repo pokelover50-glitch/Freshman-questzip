@@ -32,6 +32,7 @@ const CHEST_SELL_PRICES: Record<string, number> = {
   "wooden-chest": 50,
   "bronze-chest": 100,
   "silver-chest": 500,
+  "armor-chest": 100,
   "gold-chest": 1750,
   "obsidian-chest": 12250,
 };
@@ -836,6 +837,7 @@ export function useGameEngine() {
               defeatedBosses: newDefeatedBosses,
               mobsDefeated: newMobsDefeated,
               unclaimedAchievements: newUnclaimedAchievements,
+              corruptedFreshmanDefeated: isCorruptedFreshman ? true : s.corruptedFreshmanDefeated,
               gold: newGold,
               level: newLevel,
               xp: newXp,

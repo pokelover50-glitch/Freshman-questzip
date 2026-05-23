@@ -2222,7 +2222,7 @@ function GameContent() {
               <div className="space-y-4">
                 <div className="text-6xl mb-2">🏰</div>
                 <h1 className="text-5xl font-serif font-bold text-purple-300 drop-shadow-[0_0_30px_rgba(168,85,247,0.6)]">
-                  Floor {Math.floor((state.encounterIndex) / 10)} Cleared!
+                  Floor {Math.floor((state.encounterIndex) / 10) + 1} Cleared!
                 </h1>
                 <p className="text-lg font-serif text-muted-foreground max-w-sm mx-auto">
                   You've cleared this floor of the tower. Regroup your strength before continuing the climb.
@@ -2247,7 +2247,7 @@ function GameContent() {
                   className="text-lg px-8 py-6 font-serif bg-purple-600 hover:bg-purple-500 text-white"
                   onClick={game.continueTowerFloor}
                 >
-                  Continue to Floor {Math.floor((state.encounterIndex) / 10) + 1} →
+                  Continue to Floor {Math.floor((state.encounterIndex) / 10) + 2} →
                 </Button>
                 <Button
                   size="lg"
@@ -2255,7 +2255,7 @@ function GameContent() {
                   className="font-serif border-border hover:bg-card/80"
                   onClick={game.goToMainMenu}
                 >
-                  Exit Tower (Save Progress)
+                  Exit Tower
                 </Button>
               </div>
             </motion.div>
@@ -2757,7 +2757,7 @@ function GameContent() {
                         const groups: Array<{ key: string; items: typeof state.inventory }> = [];
                         const seen = new Set<string>();
                         for (const item of state.inventory) {
-                          const isStackable = item.def.type === "chest" || item.def.type === "grease" || (item.def.type === "usable" && !item.upgradeLevel);
+                          const isStackable = item.def.isChest === true || item.def.stackable === true;
                           if (isStackable) {
                             if (!seen.has(item.def.id)) {
                               seen.add(item.def.id);
@@ -2770,7 +2770,7 @@ function GameContent() {
                         return groups.map(({ key, items }) => {
                           const item = items[0];
                           const count = items.length;
-                          const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0);
+                          const sellVal = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0, item.def.id);
                           const isEquipped = item.def.id === state.equippedItemId || item.def.id === state.equippedArmorId;
                           return (
                             <div key={key} className={`rounded-xl border border-border/50 bg-background/20 p-3 flex items-center justify-between gap-3 ${rarityTierClass(item.def.rarityTier)}`}>
