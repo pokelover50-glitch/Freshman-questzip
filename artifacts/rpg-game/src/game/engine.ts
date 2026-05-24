@@ -135,7 +135,7 @@ export const NG_SHOP_ITEMS = [
     name: "Obsidian Chest",
     emoji: "🖤",
     price: 35000,
-    description: "NG+ exclusive. Contains Divine Armor, Divine Daggers, Void Rapier, or 67 Wand.",
+    description: "NG+ exclusive. Contains Divine Armor, Divine Daggers, Void Rapier, or ???.",
     make: (): GearItemInstance => ({
       instanceId: `ng-obsidian-chest-${Math.random().toString(36).slice(2, 9)}`,
       def: NG_CHEST_ITEMS[1],
