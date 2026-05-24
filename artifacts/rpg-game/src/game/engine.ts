@@ -1208,8 +1208,22 @@ export function useGameEngine() {
         inventory: s.inventory,
         equippedItemId: s.equippedItemId,
         equippedArmorId: s.equippedArmorId,
-        playerHp: s.selectedClass?.maxHp ?? 100,
-        playerMaxHp: s.selectedClass?.maxHp ?? 100,
+        playerHp: (() => {
+          const base = s.selectedClass?.maxHp ?? 100;
+          if (!s.equippedArmorId) return base;
+          const armorInst = s.inventory.find((i) => i.def.id === s.equippedArmorId && i.def.isArmor);
+          const armorDef = armorInst?.def ?? ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
+          if (!armorDef?.hpBonus) return base;
+          return base + Math.floor(armorDef.hpBonus * Math.pow(1.1, armorInst?.upgradeLevel ?? 0));
+        })(),
+        playerMaxHp: (() => {
+          const base = s.selectedClass?.maxHp ?? 100;
+          if (!s.equippedArmorId) return base;
+          const armorInst = s.inventory.find((i) => i.def.id === s.equippedArmorId && i.def.isArmor);
+          const armorDef = armorInst?.def ?? ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
+          if (!armorDef?.hpBonus) return base;
+          return base + Math.floor(armorDef.hpBonus * Math.pow(1.1, armorInst?.upgradeLevel ?? 0));
+        })(),
       };
       // Persist immediately so the slot reflects the NG+ state right away
       saveGameToSlot(activeSlot, newState);
