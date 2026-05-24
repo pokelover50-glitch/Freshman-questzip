@@ -1015,11 +1015,22 @@ function GameContent() {
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  function handleUsernameSubmit() {
+  async function handleUsernameSubmit() {
     const err = validateUsername(usernameInput);
     if (err) { setUsernameError(err); return; }
-    setUsernameSaving(true);
     const trimmed = usernameInput.trim();
+    setUsernameSaving(true);
+    try {
+      const res = await fetch(`/api/leaderboard/check-name?name=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+      if (!data.available) {
+        setUsernameError("That name is already taken — choose another.");
+        setUsernameSaving(false);
+        return;
+      }
+    } catch {
+      // If the check fails, allow through (don't block on network error)
+    }
     localStorage.setItem(USERNAME_KEY, trimmed);
     setUsername(trimmed);
     setUsernameError(null);

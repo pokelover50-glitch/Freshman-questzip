@@ -31,6 +31,24 @@ router.get("/leaderboard", async (_req, res) => {
   }
 });
 
+router.get("/leaderboard/check-name", async (req, res) => {
+  const name = typeof req.query.name === "string" ? req.query.name.trim() : "";
+  if (name.length < 1 || name.length > 32) {
+    res.json({ available: false });
+    return;
+  }
+  try {
+    const existing = await db
+      .select()
+      .from(leaderboardTable)
+      .where(sql`LOWER(player_name) = LOWER(${name})`)
+      .limit(1);
+    res.json({ available: existing.length === 0 });
+  } catch {
+    res.status(500).json({ error: "Failed to check name" });
+  }
+});
+
 router.post("/leaderboard", async (req, res) => {
   const { playerName, level, ngPlus, characterClass } = req.body ?? {};
 
