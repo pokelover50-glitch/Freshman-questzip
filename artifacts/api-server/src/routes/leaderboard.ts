@@ -6,12 +6,26 @@ const router: IRouter = Router();
 
 router.get("/leaderboard", async (_req, res) => {
   try {
-    const rows = await db
-      .select()
-      .from(leaderboardTable)
-      .orderBy(desc(leaderboardTable.level), desc(leaderboardTable.ngPlus))
-      .limit(50);
-    res.json({ entries: rows });
+    // DISTINCT ON deduplicates by player name, keeping only the highest-level entry per player
+    const rows = await db.execute(sql`
+      SELECT * FROM (
+        SELECT DISTINCT ON (LOWER(player_name))
+          id, player_name, level, ng_plus, character_class, submitted_at
+        FROM leaderboard
+        ORDER BY LOWER(player_name), level DESC, ng_plus DESC
+      ) ranked
+      ORDER BY level DESC, ng_plus DESC
+      LIMIT 50
+    `);
+    const entries = rows.rows.map((r: Record<string, unknown>) => ({
+      id: r.id,
+      playerName: r.player_name,
+      level: r.level,
+      ngPlus: r.ng_plus,
+      characterClass: r.character_class,
+      submittedAt: r.submitted_at,
+    }));
+    res.json({ entries });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch leaderboard" });
   }

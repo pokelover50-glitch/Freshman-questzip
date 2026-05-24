@@ -748,6 +748,12 @@ export function useGameEngine() {
           rawDrops = [...rawDrops, rollNgPlusBossChest()];
         }
 
+        // NG+: filter normal chests from enemy drops (they stay in the shop)
+        if ((s.ngPlus ?? 0) >= 1) {
+          const normalChestIds = new Set(["wooden-chest", "bronze-chest", "silver-chest", "armor-chest"]);
+          rawDrops = rawDrops.filter((d) => !normalChestIds.has(d.def.id));
+        }
+
         // Track Corrupted Freshman defeat for NG+ unlock condition
         const isCorruptedFreshman = currentEncounter.id === "tower-boss-corrupted-freshman";
 
@@ -1094,18 +1100,21 @@ export function useGameEngine() {
       const armorInst = s.inventory.find((i) => i.def.id === itemId && i.def.isArmor);
       const armorItem = armorInst?.def;
       if (!armorItem || !armorItem.hpBonus) return s;
+      // Apply upgrade level to bonus so re-equipping a leveled armor gives full stat
+      const newArmorBonus = Math.floor(armorItem.hpBonus * Math.pow(1.1, armorInst!.upgradeLevel ?? 0));
       let newMaxHp = s.playerMaxHp;
       let newHp = s.playerHp;
       if (s.equippedArmorId) {
         const oldArmorInst = s.inventory.find((i) => i.def.id === s.equippedArmorId && i.def.isArmor);
         const oldArmor = oldArmorInst?.def ?? ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
         if (oldArmor?.hpBonus) {
-          newMaxHp -= oldArmor.hpBonus;
+          const oldBonus = Math.floor(oldArmor.hpBonus * Math.pow(1.1, oldArmorInst?.upgradeLevel ?? 0));
+          newMaxHp -= oldBonus;
           newHp = Math.min(newHp, newMaxHp);
         }
       }
-      newMaxHp += armorItem.hpBonus;
-      newHp += armorItem.hpBonus;
+      newMaxHp += newArmorBonus;
+      newHp += newArmorBonus;
       return { ...s, equippedArmorId: itemId, playerMaxHp: newMaxHp, playerHp: newHp };
     });
   }, []);
@@ -1116,7 +1125,8 @@ export function useGameEngine() {
       const armorInst = s.inventory.find((i) => i.def.id === s.equippedArmorId && i.def.isArmor);
       const armorItem = armorInst?.def ?? ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId);
       if (!armorItem?.hpBonus) return { ...s, equippedArmorId: null };
-      const newMaxHp = s.playerMaxHp - armorItem.hpBonus;
+      const bonus = Math.floor(armorItem.hpBonus * Math.pow(1.1, armorInst?.upgradeLevel ?? 0));
+      const newMaxHp = s.playerMaxHp - bonus;
       const newHp = Math.min(s.playerHp, newMaxHp);
       return { ...s, equippedArmorId: null, playerMaxHp: newMaxHp, playerHp: newHp };
     });
