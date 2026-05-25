@@ -235,11 +235,13 @@ function ChestSpinner({
   onClaim,
   onClose,
   ownedItemIds = [],
+  isDoomscroller = false,
 }: {
   chest: GearItemInstance;
   onClaim: (instanceId: string, wonItem: GearItemDef) => void;
   onClose: () => void;
   ownedItemIds?: string[];
+  isDoomscroller?: boolean;
 }) {
   const isNgChest = chest.def.id === "gold-chest" || chest.def.id === "obsidian-chest";
   const pool = isNgChest
@@ -247,9 +249,16 @@ function ChestSpinner({
     : (CHEST_LOOT_POOLS[chest.def.id] ?? []);
   const wonItemRef = useRef<GearItemDef | null>(null);
   if (!wonItemRef.current) {
-    wonItemRef.current = isNgChest
-      ? rollNgPlusChestDrop(chest.def.id)
-      : rollChestDrop(chest.def.id);
+    const roll1 = isNgChest ? rollNgPlusChestDrop(chest.def.id) : rollChestDrop(chest.def.id);
+    if (isDoomscroller) {
+      // x2 luck: roll twice and keep the rarer result (lower weight in pool = rarer)
+      const roll2 = isNgChest ? rollNgPlusChestDrop(chest.def.id) : rollChestDrop(chest.def.id);
+      const w1 = pool.find((e) => e.item.id === roll1.id)?.weight ?? Infinity;
+      const w2 = pool.find((e) => e.item.id === roll2.id)?.weight ?? Infinity;
+      wonItemRef.current = w2 < w1 ? roll2 : roll1;
+    } else {
+      wonItemRef.current = roll1;
+    }
   }
   const wonItem = wonItemRef.current;
 
@@ -2530,7 +2539,13 @@ function GameContent() {
                 size="lg"
                 variant="outline"
                 className="text-lg px-12 py-6 font-serif border-destructive/50 hover:bg-destructive hover:text-destructive-foreground text-destructive transition-colors"
-                onClick={state.activeRaidId === "tower" ? game.goToMainMenu : game.goToRaidSelect}
+                onClick={
+                  state.activeRaidId === "tower"
+                    ? game.goToMainMenu
+                    : state.activeRaidId
+                      ? game.goToRaidSelect
+                      : game.restartJourney
+                }
                 data-testid="button-try-again"
               >
                 {state.activeRaidId === "tower" ? "Leave Tower" : "Try Again"}
@@ -3097,6 +3112,7 @@ function GameContent() {
           <ChestSpinner
             chest={spinnerChest}
             ownedItemIds={state.inventory.map(i => i.def.id)}
+            isDoomscroller={state.selectedClass?.ability === "doomscroller"}
             onClaim={(instanceId, wonItem) => {
               game.openChest(instanceId, wonItem);
               setSpinnerChest(null);
@@ -3250,6 +3266,7 @@ function GameContent() {
             username={username}
             currentLevel={state.level}
             currentNgPlus={state.ngPlus ?? 0}
+            doomscrollerUnlocked={state.doomscrollerUnlocked ?? false}
           />
         )}
       </AnimatePresence>

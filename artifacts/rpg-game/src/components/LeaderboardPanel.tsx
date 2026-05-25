@@ -41,11 +41,13 @@ export function LeaderboardPanel({
   username,
   currentLevel,
   currentNgPlus,
+  doomscrollerUnlocked = false,
 }: {
   onClose: () => void;
   username: string;
   currentLevel: number;
   currentNgPlus: number;
+  doomscrollerUnlocked?: boolean;
 }) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,6 +150,10 @@ export function LeaderboardPanel({
           )}
           {!loading && !error && entries.map((entry, i) => {
             const isMe = entry.playerName.toLowerCase() === username.toLowerCase();
+            const isDoom = entry.characterClass === "doomscroller-freshman";
+            const hideDoom = isDoom && !doomscrollerUnlocked && !isMe;
+            const displayEmoji = hideDoom ? "❓" : (CLASS_EMOJI[entry.characterClass ?? ""] ?? "🎮");
+            const displayClass = hideDoom ? "???" : (CLASS_NAME[entry.characterClass ?? ""] ?? entry.characterClass);
             return (
               <motion.div
                 key={entry.id}
@@ -170,7 +176,7 @@ export function LeaderboardPanel({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 truncate">
                     {entry.characterClass && (
-                      <span className="text-sm shrink-0">{CLASS_EMOJI[entry.characterClass] ?? "🎮"}</span>
+                      <span className="text-sm shrink-0">{displayEmoji}</span>
                     )}
                     <span className={`font-serif font-semibold text-sm truncate ${isMe ? "text-primary" : "text-foreground"}`}>
                       {entry.playerName}
@@ -179,7 +185,7 @@ export function LeaderboardPanel({
                   </div>
                   {entry.characterClass && (
                     <p className="text-[10px] text-muted-foreground/50 font-serif truncate">
-                      {CLASS_NAME[entry.characterClass] ?? entry.characterClass}
+                      {displayClass}
                     </p>
                   )}
                 </div>

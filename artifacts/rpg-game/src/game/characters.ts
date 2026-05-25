@@ -27,7 +27,7 @@ export const CHARACTER_CLASSES: CharacterClassDef[] = [
     description:
       "Underestimated. Unbothered. You have an uncanny ability to simply not get hurt when everyone expects you to.",
     maxHp: 100,
-    bonus: "25% chance to negate ALL damage taken from any choice",
+    bonus: "x1.5 on every heal in the game. 25% chance to negate ALL damage taken from any choice.",
     emoji: "💅",
     ability: "negate-damage-chance",
   },
@@ -37,7 +37,7 @@ export const CHARACTER_CLASSES: CharacterClassDef[] = [
     description:
       "Something about you catches Barrett Luke Hutchins completely off guard. He simply cannot win against you.",
     maxHp: 200,
-    bonus: "Deals x1.75 damage to Barrett Luke Hutchins on any choice selected against him",
+    bonus: "Deals x1.75 damage to Barrett Luke Hutchins. x1.25 gold gain from everything in the game.",
     emoji: "👑",
     ability: "barrett-damage-multiplier",
   },
@@ -57,7 +57,7 @@ export const CHARACTER_CLASSES: CharacterClassDef[] = [
     description:
       "Phone in hand, eyes glazed, mind running at full speed. You've consumed enough content to bend reality slightly in your favor.",
     maxHp: 125,
-    bonus: "Deals x1.1 damage on every choice. 15% chance to loot a chest after defeating any enemy.",
+    bonus: "x2 Luck on every chest. x1.1 damage on every choice. 15% chance to get 2 chest drops on all bosses.",
     emoji: "📲",
     ability: "doomscroller",
   },

@@ -251,6 +251,7 @@ function applyClassAbility(
     }
 
     case "negate-damage-chance":
+      healAmount = Math.round(healAmount * 1.5);
       if (basePlayerDamage > 0 && Math.random() < 0.25) {
         playerDamage = 0;
         abilityMessage = "Unbothered energy: all incoming damage negated!";
@@ -668,8 +669,11 @@ export function useGameEngine() {
       newInventory.splice(itemIdx, 1);
 
       if (def.healAmount && def.healAmount > 0) {
-        const healGiven = Math.min(def.healAmount, s.playerMaxHp - s.playerHp);
-        const newPlayerHp = Math.min(s.playerHp + def.healAmount, s.playerMaxHp);
+        const rawHeal = s.selectedClass?.ability === "negate-damage-chance"
+          ? Math.round(def.healAmount * 1.5)
+          : def.healAmount;
+        const healGiven = Math.min(rawHeal, s.playerMaxHp - s.playerHp);
+        const newPlayerHp = Math.min(s.playerHp + rawHeal, s.playerMaxHp);
         const fakeOutcome: ChoiceOutcome = {
           text: `Used ${def.name}`,
           playerDamage: 0,
@@ -738,8 +742,8 @@ export function useGameEngine() {
           rawDrops = rollMobDrops(currentEncounter.id, isRaid);
         }
 
-        // Doomscroller 15% chest bonus on any kill
-        if (s.selectedClass?.ability === "doomscroller" && Math.random() < 0.15) {
+        // Doomscroller 15% to get an extra chest drop on boss kills
+        if (s.selectedClass?.ability === "doomscroller" && currentEncounter.isBoss && Math.random() < 0.15) {
           rawDrops = [...rawDrops, rollDoomscrollerChest()];
         }
 
@@ -812,6 +816,9 @@ export function useGameEngine() {
           goldEarned = (GOLD_REWARDS[baseId] ?? 0) * 3;
         } else {
           goldEarned = GOLD_REWARDS[rawId] ?? 0;
+        }
+        if (s.selectedClass?.ability === "barrett-damage-multiplier") {
+          goldEarned = Math.floor(goldEarned * 1.25);
         }
         const newGold = s.gold + goldEarned;
 
@@ -1353,7 +1360,10 @@ export function useGameEngine() {
         newEquippedArmorId = null;
       }
 
-      const sellValueFixed = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0, item.def.id);
+      let sellValueFixed = getSellValue(item.def.rarityColor, item.upgradeLevel ?? 0, item.def.id);
+      if (s.selectedClass?.ability === "barrett-damage-multiplier") {
+        sellValueFixed = Math.floor(sellValueFixed * 1.25);
+      }
       return {
         ...s,
         inventory: newInventory,
@@ -1371,7 +1381,10 @@ export function useGameEngine() {
     setState((s) => {
       const toSell = s.inventory.filter((i) => i.def.id === defId);
       if (toSell.length === 0) return s;
-      const perItem = getSellValue(toSell[0].def.rarityColor, toSell[0].upgradeLevel ?? 0, defId);
+      let perItem = getSellValue(toSell[0].def.rarityColor, toSell[0].upgradeLevel ?? 0, defId);
+      if (s.selectedClass?.ability === "barrett-damage-multiplier") {
+        perItem = Math.floor(perItem * 1.25);
+      }
       const totalGold = perItem * toSell.length;
       const newInventory = s.inventory.filter((i) => i.def.id !== defId);
       return {
@@ -1379,6 +1392,34 @@ export function useGameEngine() {
         inventory: newInventory,
         gold: s.gold + totalGold,
         itemActionMessage: `Sold ${toSell.length}× ${toSell[0].def.name} for 🪙 ${totalGold.toLocaleString()}`,
+      };
+    });
+  }, []);
+
+  const restartJourney = useCallback(() => {
+    setState((s) => {
+      const base = s.selectedClass?.maxHp ?? 100;
+      const armorInst = s.equippedArmorId
+        ? s.inventory.find((i) => i.def.id === s.equippedArmorId && i.def.isArmor)
+        : null;
+      const armorDef = armorInst?.def ?? (s.equippedArmorId ? ARMOR_ITEMS.find((a) => a.id === s.equippedArmorId) : null);
+      const armorBonus = armorDef?.hpBonus
+        ? Math.floor(armorDef.hpBonus * Math.pow(1.1, armorInst?.upgradeLevel ?? 0))
+        : 0;
+      const fullHp = base + armorBonus;
+      return {
+        ...s,
+        phase: "combat",
+        zoneIndex: 0,
+        encounterIndex: 0,
+        activeRaidId: null,
+        pendingDrops: [],
+        showOutcome: false,
+        lastOutcome: null,
+        abilityMessage: null,
+        itemActionMessage: null,
+        playerHp: fullHp,
+        playerMaxHp: fullHp,
       };
     });
   }, []);
@@ -1463,5 +1504,6 @@ export function useGameEngine() {
     continueTowerFloor,
     toggleSkipVendor,
     toggleSkipChestDrops,
+    restartJourney,
   };
 }
